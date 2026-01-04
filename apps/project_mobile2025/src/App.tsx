@@ -2,6 +2,7 @@ import { Redirect, Route } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Home from './pages/Home';
+import BadmintonCourts from './pages/BadmintonCourts';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -45,6 +46,12 @@ const App: React.FC = () => (
         <Route exact path="/">
           <Redirect to="/home" />
         </Route>
+
+        {/* เพิ่มบรรทัดนี้ลงไปครับ 👇 */}
+        <Route exact path="/badminton">
+          <BadmintonCourts />
+        </Route>
+        
       </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>

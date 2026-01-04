@@ -8,8 +8,10 @@ import {
   footballOutline, alertCircleOutline, locationOutline, 
   searchOutline, notificationsOutline, personCircleOutline 
 } from 'ionicons/icons';
+import { useIonRouter } from '@ionic/react';
 
 const Home: React.FC = () => {
+  const router = useIonRouter();
   return (
     <IonPage>
       {/* --- Header ส่วนบน --- */}
@@ -63,13 +65,13 @@ const Home: React.FC = () => {
         <IonGrid className="category-grid">
           <IonRow>
             {/* กล่องแบดมินตัน */}
-            <IonCol size="6">
-              <div className="sport-card badminton-card">
-                <div className="icon-bg">🏸</div>
-                <h4>แบดมินตัน</h4>
-                <p>12 สนาม</p>
-              </div>
-            </IonCol>
+          <IonCol size="6">
+            <div className="sport-card" onClick={() => router.push('/badminton')}>
+              <div className="icon-bg">🏸</div>
+              <h4>แบดมินตัน</h4>
+              <p>12 สนาม</p>
+            </div>
+          </IonCol>
 
             {/* กล่องฟุตบอล */}
             <IonCol size="6">
@@ -110,7 +112,7 @@ const Home: React.FC = () => {
         {/* Card สนามที่ 2 */}
         <IonCard className="field-card">
           <div className="card-img-wrapper">
-            <img src="https://images.unsplash.com/photo-1626224583764-847890e058f5?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="field" />
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh3xY_ZSFMhPL9kE0poDTYtijzEDCHfJfjmX5Y_36hC790mTXsjh3CE6tRudLCi_a1LCbgzmauRhJv5aAA7kDubm46SJLULYtHtUxL9bcAicbs0_xh4j82WufpFLeGtoXtMxojnVuHq9iyuWVpGlRfCb5oZJcLgQiMUHEW21q3WEC3GHwgXz9OUHAhmyzg/s1360/PS01.jpg" alt="field" />
             <IonBadge color="warning" className="rating-badge">⭐ 4.5</IonBadge>
           </div>
           <IonCardHeader>
