@@ -1,1 +1,5 @@
-เทส repo ใหม่หน่อย
+วิธีรันไฟล์
+
+เปิด terminal พิมพ์ 
+
+pnpm --filter project_mobile2025 dev

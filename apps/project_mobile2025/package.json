@@ -1,5 +1,5 @@
 {
-  "name": "lab01_react",
+  "name": "project_mobile2025",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -33,7 +33,7 @@
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.4.3",
-    "@types/react": "19.0.10",
+    "@types/react": "^19.0.10",
     "@types/react-dom": "19.0.4",
     "@vitejs/plugin-legacy": "^5.0.0",
     "@vitejs/plugin-react": "^4.0.1",
