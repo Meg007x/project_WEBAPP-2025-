@@ -75,7 +75,7 @@ const Home: React.FC = () => {
 
             {/* กล่องฟุตบอล */}
             <IonCol size="6">
-              <div className="sport-card football-card">
+              <div className="sport-card" onClick={() => router.push('/football')}>
                 <div className="icon-bg">⚽</div>
                 <h4>ฟุตบอล</h4>
                 <p>8 สนาม</p>

@@ -3,6 +3,7 @@ import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Home from './pages/Home';
 import BadmintonCourts from './pages/BadmintonCourts';
+import FootballFields from './pages/FootballFields';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -51,7 +52,13 @@ const App: React.FC = () => (
         <Route exact path="/badminton">
           <BadmintonCourts />
         </Route>
-        
+
+        {/* Football */}
+        <Route exact path="/football">
+          <FootballFields />
+        </Route>
+
+
       </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>
