@@ -1,0 +1,193 @@
+/* --- Header & Search --- */
+.home-toolbar {
+  --background: transparent;
+  padding-top: 10px;
+}
+
+.user-name {
+  margin: 0;
+  font-weight: 800; /* ตัวหนาพิเศษแบบเสื้อบอล */
+  font-size: 1.8rem;
+  color: #fff;
+  letter-spacing: 1px;
+  text-transform: uppercase; /* ตัวพิมพ์ใหญ่ทั้งหมดดูเท่กว่า */
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+}
+
+/* ปุ่มแจ้งเตือนแบบ Dark */
+.notify-btn {
+  --color: #fff;
+  background: rgba(255, 255, 255, 0.1); /* โปร่งใส */
+  border-radius: 12px; /* เหลี่ยมมนนิดๆ */
+  width: 45px;
+  height: 45px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.dot {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  background: #D4AF37; /* เปลี่ยนจุดแดงเป็นจุดทอง */
+  border-radius: 50%;
+  box-shadow: 0 0 10px #D4AF37; /* มีแสงฟุ้งๆ */
+}
+
+/* Search Bar แบบ Dark Mode */
+.custom-search {
+  padding-inline: 0;
+  --background: #252525;
+  --color: #fff;
+  --placeholder-color: #888;
+  --icon-color: #D4AF37;
+  --border-radius: 8px;
+  box-shadow: none;
+  margin-bottom: 20px;
+}
+
+/* --- Hero Banner (จุดเด่น) --- */
+.hero-banner {
+  /* ไล่สี ดำ -> ทองจางๆ แบบเสื้อ Juve Away Kit */
+  background: linear-gradient(145deg, #1a1a1a, #332f20); 
+  border: 1px solid rgba(212, 175, 55, 0.3); /* ขอบทองบางๆ */
+  border-radius: 16px;
+  padding: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* เอฟเฟกต์แสงสะท้อน */
+.hero-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.hero-text h3 {
+  margin: 0;
+  font-weight: 800;
+  font-size: 1.6rem;
+  color: #fff;
+  font-style: italic; /* ตัวเอียงสไตล์สปอร์ต */
+}
+
+.hero-text p {
+  color: #ccc;
+  margin-bottom: 15px;
+}
+
+/* ปุ่มดูโปรโมชั่น */
+.hero-text ion-button {
+  --background: #D4AF37;
+  --color: #000;
+  font-weight: 700;
+  --border-radius: 4px;
+}
+
+.hero-img {
+  width: 90px;
+  height: 90px;
+  filter: drop-shadow(0 0 15px rgba(212,175,55,0.4)); /* เงาทอง */
+}
+
+/* --- หมวดหมู่กีฬา --- */
+.section-title h3, .section-header h3 {
+  color: #fff;
+  font-weight: 700;
+  border-left: 4px solid #D4AF37; /* ขีดทองหน้าหัวข้อ */
+  padding-left: 10px;
+}
+
+.section-header ion-button {
+  --color: #D4AF37;
+}
+
+.sport-card {
+  background: #1e1e1e;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  border: 1px solid #333;
+  transition: all 0.3s ease;
+}
+
+/* ทำให้การ์ดเรืองแสงเมื่อกด */
+.sport-card:active {
+  background: #252525;
+  border-color: #D4AF37;
+}
+
+.icon-bg {
+  font-size: 2.5rem;
+  background: linear-gradient(to bottom, #D4AF37, #8a7018); /* ไอคอนสีทองไล่เฉด */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.sport-card h4 {
+  color: #fff;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+/* --- Field Card (การ์ดสนาม) --- */
+.field-card {
+  background: #1e1e1e;
+  margin: 0 0 25px 0;
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5); /* เงาเข้มๆ */
+}
+
+.card-img-wrapper {
+  height: 160px;
+}
+
+/* ป้าย Rating สีดำทอง */
+.rating-badge {
+  background: #000 !important;
+  color: #D4AF37 !important;
+  border: 1px solid #D4AF37;
+  top: 10px;
+  right: 10px;
+}
+
+.field-type {
+  color: #9ca3af;
+  letter-spacing: 1px;
+}
+
+.field-title {
+  color: #fff;
+  font-size: 1.3rem;
+  margin-top: 5px;
+}
+
+.field-info {
+  border-top: 1px solid #333; /* เส้นคั่นบางๆ */
+  padding-top: 10px;
+  margin-top: 5px;
+  color: #ccc;
+}
+
+.field-info .price {
+  color: #D4AF37; /* ราคาสีทอง */
+  font-size: 1.2rem;
+  text-shadow: 0 0 10px rgba(212,175,55,0.3);
+}

@@ -1,2 +1,29 @@
-/* For information on how to create your own theme, please refer to:
-http://ionicframework.com/docs/theming/ */
+/* นำเข้าฟอนต์ */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700&family=Noto+Sans:wght@300;400;500;700&display=swap');
+
+:root {
+  /* Font */
+  --ion-font-family: 'Noto Sans', 'Noto Sans Thai', sans-serif;
+
+  /* --- THEME: DARK LUXURY (Juve/PSG Style) --- */
+  
+  /* พื้นหลัง: ดำเทาเข้ม (ไม่ใช่ดำสนิท จะดูแพงกว่า) */
+  --ion-background-color: #121212;
+  --ion-background-color-rgb: 18, 18, 18;
+  
+  /* สีตัวหนังสือ: ขาว */
+  --ion-text-color: #ffffff;
+  --ion-text-color-rgb: 255, 255, 255;
+
+  /* สีหลัก: ทอง (Gold Premium) ตัดกับพื้นดำ */
+  --ion-color-primary: #D4AF37;
+  --ion-color-primary-rgb: 212, 175, 55;
+  --ion-color-primary-contrast: #000000;
+  
+  /* สีรอง: เทาเงิน */
+  --ion-color-medium: #9ca3af;
+  
+  /* สีพื้นหลังการ์ด (Card Background) */
+  --ion-item-background: #1e1e1e;
+  --ion-card-background: #1e1e1e;
+}
