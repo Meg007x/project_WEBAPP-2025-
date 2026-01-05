@@ -23,7 +23,7 @@ const BadmintonCourts: React.FC = () => {
     },
     {
       id: 2,
-      name: 'Complex Court KKU',
+      name: 'FIRST SHOT BADMINTON',
       location: 'ภายในมหาวิทยาลัยขอนแก่น',
       distance: '0.8 กม.',
       price: 120,
