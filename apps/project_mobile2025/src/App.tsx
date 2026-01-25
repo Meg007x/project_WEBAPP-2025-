@@ -4,12 +4,16 @@ import { IonReactRouter } from '@ionic/react-router';
 
 /* Import หน้าต่างๆ ให้ครบ (เช็คชื่อไฟล์ให้ตรงกับในโฟลเดอร์ pages เป๊ะๆ นะครับ) */
 import Home from './pages/Home';
+
 import BadmintonVenue from './pages/BadmintonVenue'; // หน้ารายละเอียดสนาม
 import CourtSelect from './pages/CourtSelect';       // หน้าเลือก Grid คอร์ด
 import BookingDetail from './pages/BookingDetail';   // หน้าบิล/ปาร์ตี้
 import BadmintonCourts from './pages/BadmintonCourts'; // เพิ่ม Import
 import BookingTicket from './pages/BookingTicket'; // Import หน้าใหม่
 import TicketList from './pages/TicketList';
+
+
+
 
 
 /* CSS Imports */
@@ -19,6 +23,7 @@ import '@ionic/react/css/structure.css';
 import '@ionic/react/css/typography.css';
 import '@ionic/react/css/palettes/dark.system.css';
 import './theme/variables.css';
+import FootballFields from './pages/FootballFields';
 
 setupIonicReact();
 
@@ -52,7 +57,12 @@ const App: React.FC = () => (
         <Route exact path="/">
           <Redirect to="/home" />
         </Route>
-        
+
+
+
+
+
+
       </IonRouterOutlet>
     </IonReactRouter>
   </IonApp>
