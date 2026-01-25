@@ -191,3 +191,287 @@
   font-size: 1.2rem;
   text-shadow: 0 0 10px rgba(212,175,55,0.3);
 }
+/* --- Dark Luxury Theme Basics --- */
+.bg-dark {
+  --background: #000000;
+  color: #f0f0f0;
+}
+
+.text-gold {
+  color: #FFD700;
+}
+
+/* --- Court Grid 8 (Multi-Select) --- */
+.court-grid-8 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 คอลัมน์ */
+  gap: 15px;
+  padding: 10px;
+}
+
+.court-box {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: all 0.2s;
+}
+
+/* เส้นสนามแบดจำลอง */
+.court-lines-graphic {
+  width: 60%;
+  height: 70%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: absolute;
+}
+.court-lines-graphic::after {
+  content: '';
+  position: absolute;
+  top: 50%; width: 100%; height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* สถานะการเลือก */
+.court-box.selected {
+  background: #FFD700;
+  border-color: #FFD700;
+  transform: scale(1.02);
+}
+.court-box.selected .court-lines-graphic { border-color: rgba(0,0,0,0.3); }
+.court-box.selected .court-lines-graphic::after { background: rgba(0,0,0,0.3); }
+.court-box.selected h3 { color: black; font-weight: 800; }
+
+.court-box.occupied {
+  background: #111;
+  opacity: 0.4;
+  pointer-events: none; /* กดไม่ได้ */
+}
+
+/* --- Party List UI (RPG Style) --- */
+.party-member-item {
+  --background: #111;
+  --border-color: #333;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.avatar-rpg {
+  background: linear-gradient(45deg, #333, #555);
+  border: 2px solid #FFD700;
+}
+/* ... (ต่อจาก code เก่าของคุณ) ... */
+
+/* พื้นหลังสีดำสำหรับหน้าใหม่ */
+.bg-dark {
+  --background: #0d0d0d; /* ดำเกือบสนิท */
+  color: white;
+}
+
+/* ปุ่มเลือกวัน/เวลาของ Ionic */
+ion-datetime-button {
+  --background: #222;
+  --color: #D4AF37;
+  border-radius: 8px;
+  padding: 5px;
+}
+
+/* Modal ปฏิทิน */
+ion-modal {
+  --background: #1a1a1a;
+  --ion-text-color: #fff;
+}
+/* --- ธีมดำทอง Dark Luxury (แก้ไขใหม่) --- */
+
+/* พื้นหลังหลัก ดำสนิท */
+.lux-page {
+  --background: #000000;
+  background-color: #000000;
+}
+
+/* Toolbar (หัวข้อ) ดำสนิท */
+.lux-toolbar {
+  --background: #000000;
+  --color: #ffffff;
+  --border-color: #222;
+}
+
+/* การ์ดและกล่องต่างๆ (เทาเข้มเกือบดำ) */
+.lux-card {
+  background-color: #111111;
+  border: 1px solid #333;
+  color: #fff;
+  border-radius: 12px;
+}
+
+/* ช่อง Input / Select */
+.lux-input {
+  --background: #1a1a1a;
+  --color: #FFD700; /* สีทอง */
+  --placeholder-color: #666;
+  border-radius: 8px;
+  border: 1px solid #333;
+  margin-top: 5px;
+}
+
+/* Grid สนามแบด (8 คอร์ด) */
+.court-grid-8 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  padding: 10px 0;
+}
+
+.court-box {
+  background-color: #1a1a1a; /* พื้นหลังคอร์ด */
+  border: 1px solid #444;
+  border-radius: 8px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: all 0.2s;
+}
+
+/* เส้นสนามจำลอง (สีขาวจางๆ) */
+.court-lines {
+  position: absolute;
+  width: 60%; height: 70%;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+.court-lines::after {
+  content: ''; position: absolute;
+  top: 50%; width: 100%; height: 1px;
+  background: rgba(255,255,255,0.15);
+}
+
+/* เมื่อเลือกสนาม (สีทอง) */
+.court-box.selected {
+  background-color: #FFD700;
+  border-color: #FFD700;
+  transform: scale(1.02);
+}
+.court-box.selected h3 { color: #000; font-weight: 900; }
+.court-box.selected .court-lines { border-color: rgba(0,0,0,0.3); }
+.court-box.selected .court-lines::after { background: rgba(0,0,0,0.3); }
+
+/* Party Member Item (List) */
+.party-item {
+  --background: #111; /* พื้นหลัง List */
+  --color: #fff;
+  border: 1px solid #333;
+  margin-bottom: 8px;
+  border-radius: 8px;
+}
+/* --- Ticket Design --- */
+.ticket-container {
+  width: 100%;
+  max-width: 320px;
+  background: #FFD700; /* สีทองเป็นพื้นหลักของตั๋ว */
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+}
+
+.ticket-top {
+  padding: 25px;
+  background: #FFD700;
+  color: #000;
+}
+
+.ticket-divider {
+  height: 20px;
+  background: #FFD700;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashed-line {
+  width: 80%;
+  height: 2px;
+  border-top: 2px dashed rgba(0,0,0,0.2);
+}
+
+.circle-left, .circle-right {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: #000; /* สีต้องตรงกับพื้นหลังหน้าจอ */
+  border-radius: 50%;
+}
+
+.circle-left { left: -12px; }
+.circle-right { right: -12px; }
+
+.ticket-bottom {
+  padding: 25px;
+  background: #fdfdfd; /* สีขาวนวลตัดกับสีทองด้านบน */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+/* VIP Ticket Design */
+.vip-ticket {
+  width: 100%;
+  max-width: 340px;
+  filter: drop-shadow(0 20px 30px rgba(0,0,0,0.5));
+}
+
+.ticket-header {
+  background: #FFD700;
+  color: #000;
+  padding: 30px 20px;
+  border-radius: 20px 20px 0 0;
+  text-align: center;
+  position: relative;
+  border-bottom: 2px dashed #000;
+}
+
+/* รอยปรุด้านข้าง */
+.ticket-header::after, .ticket-header::before {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  width: 20px;
+  height: 20px;
+  background: #000; /* สีพื้นหลังหน้าจอ */
+  border-radius: 50%;
+}
+.ticket-header::before { left: -10px; }
+.ticket-header::after { right: -10px; }
+
+.ticket-body {
+  background: #fff;
+  color: #000;
+  padding: 30px 25px;
+  border-radius: 0 0 20px 20px;
+}
+
+.ticket-body small {
+  color: #999;
+  font-weight: bold;
+  display: block;
+}
+
+.ticket-body .val {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #000;
+}
+/* ✅ เพิ่มตัวนี้ครับ: ทำให้เนื้อหาทุกหน้ามีช่องไฟ หายใจสะดวก */
+.lux-container {
+  padding: 20px;
+  padding-bottom: 80px; /* เผื่อที่ด้านล่างให้ปุ่มไม่บังเนื้อหา */
+  max-width: 600px;     /* ถ้าเปิดในไอแพด เนื้อหาจะไม่บานเกินไป */
+  margin: 0 auto;       /* จัดกึ่งกลาง */
+}
