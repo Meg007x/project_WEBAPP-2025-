@@ -107,9 +107,7 @@ const Home: React.FC = () => {
             <IonButton fill="clear" size="small" color="warning">ดูทั้งหมด</IonButton>
           </div>
           
-          <IonButton fill="clear" color="medium" onClick={seedDatabase}>
-            (Admin) กดเพื่อสร้างฐานข้อมูลสนามครั้งแรก
-          </IonButton>
+
 
           <IonCard className="field-card" onClick={() => history.push('/badminton-venue')} style={{ borderRadius: '24px', margin: 0, width: '100%' }}>
             <div className="card-img-wrapper">
