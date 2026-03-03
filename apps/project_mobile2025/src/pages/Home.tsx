@@ -11,6 +11,7 @@ import {
   qrCodeOutline, flashOutline 
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
+import { seedDatabase } from '../data/seed'; // import มาจากไฟล์ที่เราสร้าง
 
 const Home: React.FC = () => {
   const history = useHistory();
@@ -105,6 +106,10 @@ const Home: React.FC = () => {
             <h3>สนามยอดฮิต 🔥</h3>
             <IonButton fill="clear" size="small" color="warning">ดูทั้งหมด</IonButton>
           </div>
+          
+          <IonButton fill="clear" color="medium" onClick={seedDatabase}>
+            (Admin) กดเพื่อสร้างฐานข้อมูลสนามครั้งแรก
+          </IonButton>
 
           <IonCard className="field-card" onClick={() => history.push('/badminton-venue')} style={{ borderRadius: '24px', margin: 0, width: '100%' }}>
             <div className="card-img-wrapper">
