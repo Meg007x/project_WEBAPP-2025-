@@ -1,118 +1,51 @@
-// src/pages/FootballVenue.tsx
 import React, { useEffect, useState } from 'react';
 import {
   IonContent, IonHeader, IonPage, IonToolbar, IonButtons, IonBackButton,
-  IonButton, IonIcon, IonBadge
+  IonButton, IonIcon, IonBadge, IonSkeletonText
 } from '@ionic/react';
 import {
-  timeOutline, locationOutline, callOutline, arrowForward,
-  mapOutline, wifiOutline, carOutline, footballOutline
+  timeOutline, locationOutline, arrowForward,
+  mapOutline, walletOutline
 } from 'ionicons/icons';
-import { useLocation, useHistory } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import './Home.css';
-
 import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 
-// นำเข้าข้อมูลจำลอง
-import { footballVenuesData } from '../data/mockfootball';
-
-type VenueDoc = {
-  id: string;
-  type: 'football' | 'badminton';
-  name: string;
-  zone: string;
-  distance: string;
-  rating?: number;
-  priceRange: string;
-  openTime: string;
-  closeTime?: string;
-  location: string;
-  facilities?: string[];
-  imageUrl: string;
-  totalCourts?: number;
-};
-
 const FootballVenue: React.FC = () => {
-  const location = useLocation<any>();
+  const { id } = useParams<{ id: string }>();
   const history = useHistory();
-  const venueId: string = String(location.state?.venueId ?? 'football_1');
-
-  const [venue, setVenue] = useState<VenueDoc | null>(null);
+  const [venue, setVenue] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
     (async () => {
       try {
         setLoading(true);
-
-        // ดัก Mock Data
-        if (venueId.startsWith('mock_')) {
-          const mockId = Number(venueId.replace('mock_', ''));
-          const mockData = footballVenuesData.find(v => v.id === mockId);
-          if (mockData && mounted) {
-            setVenue({
-              id: venueId,
-              type: 'football',
-              name: mockData.name,
-              zone: mockData.zone,
-              distance: mockData.distance,
-              rating: mockData.rating,
-              priceRange: mockData.priceRange,
-              openTime: mockData.openTime.split(' - ')[0],
-              closeTime: mockData.openTime.split(' - ')[1],
-              location: mockData.location,
-              facilities: mockData.facilities,
-              imageUrl: mockData.imageUrl,
-              totalCourts: mockData.totalCourts
-            });
-          }
-          return;
-        }
-
-        const ref = doc(db, 'venues', venueId);
-        const snap = await getDoc(ref);
-
-        if (!snap.exists()) {
-          if (mounted) setVenue(null);
-          return;
-        }
-
-        const data = { ...(snap.data() as any), id: snap.id } as VenueDoc;
-        if (mounted) setVenue(data);
+        const snap = await getDoc(doc(db, 'venues', id));
+        if (snap.exists()) setVenue({ ...snap.data(), id: snap.id });
       } catch (e) {
-        console.error('load football venue error:', e);
-        if (mounted) setVenue(null);
+        console.error('Error fetching venue:', e);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     })();
+  }, [id]);
 
-    return () => { mounted = false; };
-  }, [venueId]);
+  // ✅ ให้เหมือนฝั่งแบด: เปิด Maps ด้วย ?q= (ใช้ location ก่อน ถ้าไม่มีค่อยใช้ชื่อสนาม)
+  const openGoogleMap = () => {
+    const mapQuery =
+      venue?.location ||
+      (venue?.name ? `สนามฟุตบอล ${venue.name}` : '16.485,102.855');
 
-  const handleBooking = () => {
-    if (!venue) return;
-    history.push({
-      pathname: '/football-select',
-      state: { venueId: venue.id }
-    });
+    window.open(`https://maps.google.com/?q=${encodeURIComponent(mapQuery)}`, '_blank');
   };
 
   if (loading) {
     return (
       <IonPage>
-        <IonHeader className="ion-no-border">
-          <IonToolbar className="lux-toolbar">
-            <IonButtons slot="start"><IonBackButton defaultHref="/football-list" color="light" /></IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent fullscreen className="lux-page">
-          <div style={{ textAlign: 'center', marginTop: '40%', color: '#666' }}>
-            <p>กำลังโหลดรายละเอียด...</p>
-          </div>
+        <IonContent>
+          <IonSkeletonText animated style={{ height: '100%' }} />
         </IonContent>
       </IonPage>
     );
@@ -121,119 +54,171 @@ const FootballVenue: React.FC = () => {
   if (!venue) {
     return (
       <IonPage>
-        <IonHeader className="ion-no-border">
-          <IonToolbar className="lux-toolbar">
-            <IonButtons slot="start"><IonBackButton defaultHref="/football-list" color="light" /></IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent fullscreen className="lux-page">
-          <div style={{ textAlign: 'center', marginTop: '40%', color: '#666' }}>
-            <p>ไม่พบข้อมูลสนาม</p>
-          </div>
-        </IonContent>
+        <IonContent className="ion-padding">ไม่พบข้อมูลสนาม</IonContent>
       </IonPage>
     );
   }
 
-  const nightPrice = (venue.priceRange?.includes('-'))
-    ? venue.priceRange.split('-')[1].trim()
-    : venue.priceRange;
+  // ✅ ให้เหมือนแบด: ถ้า priceRange เป็น "500 - 800" เอาเลขหลังเป็นราคากลางคืน
+  const nightPrice =
+    (venue?.priceRange && String(venue.priceRange).includes('-'))
+      ? String(venue.priceRange).split('-')[1].trim()
+      : (venue?.nightPrice ?? venue?.priceRange ?? '800');
+
+  const dayPrice =
+    venue?.dayPrice ??
+    (venue?.priceRange && String(venue.priceRange).includes('-')
+      ? String(venue.priceRange).split('-')[0].trim()
+      : '500');
+
+  // ✅ facilities ให้เหมือนแบด (ถ้าไม่มีใน DB ให้ fallback)
+  const facilities: string[] = Array.isArray(venue?.facilities)
+    ? venue.facilities
+    : ['ที่จอดรถ', 'WiFi', 'ห้องน้ำ', 'เครื่องดื่ม'];
 
   return (
     <IonPage>
+      {/* ✅ Header เหมือน BadmintonVenue */}
       <IonHeader className="ion-no-border">
         <IonToolbar className="lux-toolbar">
-          <IonButtons slot="start"><IonBackButton defaultHref="/football-list" color="light" /></IonButtons>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/football-list" color="light" />
+          </IonButtons>
+          <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 'bold' }}>
+            รายละเอียดสนาม
+          </div>
         </IonToolbar>
       </IonHeader>
 
+      {/* ✅ Content wrapper เหมือน BadmintonVenue */}
       <IonContent fullscreen className="lux-page">
         <div className="lux-container">
-
-          <div style={{ borderRadius: '20px', overflow: 'hidden', marginBottom: '20px', border: '1px solid #333', height: '220px' }}>
+          {/* ✅ Banner เหมือนแบด */}
+          <div
+            style={{
+              borderRadius: '20px',
+              overflow: 'hidden',
+              marginBottom: '20px',
+              border: '1px solid #333',
+              height: '220px'
+            }}
+          >
             <img
               src={venue.imageUrl}
-              alt="field"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', backgroundColor: '#000' }}
+              alt={venue.name}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
 
+          {/* ✅ ชื่อ + rating เหมือนแบด */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h1 className="user-name" style={{ fontSize: '1.8rem', margin: 0 }}>{venue.name}</h1>
-            <IonBadge color="warning" style={{ fontSize: '1rem', padding: '8px 12px', borderRadius: '8px' }}>⭐ {venue.rating ?? 4.7}</IonBadge>
+            <h1 className="user-name" style={{ fontSize: '1.8rem', margin: 0 }}>
+              {venue.name}
+            </h1>
+            <IonBadge
+              color="warning"
+              style={{ fontSize: '1rem', padding: '8px 12px', borderRadius: '8px' }}
+            >
+              ⭐ {venue.rating ?? '5.0'}
+            </IonBadge>
           </div>
 
-          <p style={{ color: '#aaa', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <IonIcon icon={locationOutline} /> ห่างจากคุณ {venue.distance}
+          {/* ✅ ระยะทาง เหมือนแบด */}
+          <p
+            style={{
+              color: '#aaa',
+              marginTop: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}
+          >
+            <IonIcon icon={locationOutline} style={{ color: '#FFD700' }} />
+            ห่างจากคุณ {venue.distance ?? '2.5'} กม.
           </p>
 
-          <div style={{ background: '#222', padding: '15px', borderRadius: '15px', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <IonIcon icon={mapOutline} style={{ fontSize: '2rem', color: '#FFD700' }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ color: '#fff', fontWeight: 'bold' }}>ตำแหน่งที่ตั้ง / โซน</div>
-              <div style={{ color: '#888', fontSize: '0.9rem' }}>{venue.location} ({venue.zone})</div>
+          {/* ✅ กล่องโซน + ปุ่มดูแผนที่ เหมือนแบด */}
+          <div
+            style={{
+              background: '#222',
+              padding: '15px',
+              borderRadius: '15px',
+              marginTop: '10px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <IonIcon icon={mapOutline} style={{ fontSize: '2rem', color: '#FFD700' }} />
+              <div>
+                <div style={{ color: '#fff', fontWeight: 'bold' }}>ตำแหน่ง/โซน</div>
+                <div style={{ color: '#888', fontSize: '0.8rem' }}>
+                  {venue.zone ?? '-'}
+                </div>
+              </div>
             </div>
-            
-            {/* แก้เฉพาะส่วนนี้ครับ */}
-            <IonButton 
-              fill="outline" 
-              color="warning" 
-              onClick={() => {
-                const mapQuery = encodeURIComponent(`${venue.name} ขอนแก่น`);
-                window.open(`https://maps.google.com/?q=${mapQuery}`, '_blank');
-              }}
+
+            <IonButton
+              fill="outline"
+              color="primary"
+              onClick={openGoogleMap}
             >
               ดูแผนที่
             </IonButton>
           </div>
 
+          {/* ✅ การ์ดเวลา/ราคา แบบ 2 คอลัมน์ เหมือนแบด */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
-            <div className="sport-card" style={{ padding: '15px' }}>
+            <div className="sport-card" style={{ padding: '15px', background: '#1a1a1a', borderRadius: '15px' }}>
               <IonIcon icon={timeOutline} style={{ color: '#FFD700', fontSize: '24px' }} />
-              <h4 style={{ margin: '5px 0' }}>เวลาทำการ</h4>
+              <h4 style={{ margin: '5px 0', color: '#fff' }}>เวลาทำการ</h4>
               <p style={{ fontSize: '0.8rem', color: '#888' }}>
-                {venue.openTime}{venue.closeTime ? ` - ${venue.closeTime}` : ''}
+                {venue.openTime ?? '10:00'} - {venue.closeTime ?? '24:00'}
               </p>
             </div>
-            <div className="sport-card" style={{ padding: '15px' }}>
-              <IonIcon icon={callOutline} style={{ color: '#FFD700', fontSize: '24px' }} />
-              <h4 style={{ margin: '5px 0' }}>ติดต่อ</h4>
-              <p style={{ fontSize: '0.8rem', color: '#888' }}>089-xxx-xxxx</p>
+
+            <div className="sport-card" style={{ padding: '15px', background: '#1a1a1a', borderRadius: '15px' }}>
+              <IonIcon icon={walletOutline} style={{ color: '#FFD700', fontSize: '24px' }} />
+              <h4 style={{ margin: '5px 0', color: '#fff' }}>ราคาเริ่มต้น</h4>
+              <p style={{ fontSize: '0.8rem', color: '#888' }}>
+                {venue.priceRange ?? `${dayPrice} - ${nightPrice}`} ฿
+              </p>
             </div>
           </div>
 
-          <div className="field-card" style={{ padding: '20px', marginTop: '20px', borderRadius: '20px' }}>
-            <h3 style={{ color: 'white', margin: 0, borderLeft: '4px solid #D4AF37', paddingLeft: '10px' }}>อัตราค่าบริการ</h3>
+          {/* ✅ อัตราค่าบริการ เหมือนแบด */}
+          <div className="field-card" style={{ padding: '20px', marginTop: '20px', borderRadius: '20px', background: '#1a1a1a' }}>
+            <h3 style={{ color: 'white', margin: 0, borderLeft: '4px solid #FFD700', paddingLeft: '10px' }}>
+              อัตราค่าบริการ
+            </h3>
             <ul style={{ color: '#ccc', lineHeight: '1.8', paddingLeft: '20px', marginTop: '10px' }}>
-              <li>🌞 10:00 - 17:00 : <span className="text-gold">800฿ / ชม.</span></li>
-              <li>🌙 17:00 - 24:00 : <span className="text-gold">{nightPrice}฿ / ชม.</span></li>
+              <li>🌞 กลางวัน : <span style={{ color: '#FFD700' }}>{dayPrice}฿ / ชม.</span></li>
+              <li>🌙 กลางคืน : <span style={{ color: '#FFD700' }}>{nightPrice}฿ / ชม.</span></li>
             </ul>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '15px', flexWrap: 'wrap' }}>
-            {venue.facilities?.length ? (
-              venue.facilities.map((fac, i) => <IonBadge key={i} color="medium">{fac}</IonBadge>)
-            ) : (
-              <>
-                <IonBadge color="medium"><IonIcon icon={carOutline} /> ที่จอดรถ</IonBadge>
-                <IonBadge color="medium"><IonIcon icon={wifiOutline} /> WiFi</IonBadge>
-                <IonBadge color="medium"><IonIcon icon={footballOutline} /> ลูกบอลฟรี</IonBadge>
-              </>
-            )}
+          {/* ✅ Facilities เป็น badge เหมือนแบด */}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '20px', flexWrap: 'wrap' }}>
+            {facilities.map((fac: string, i: number) => (
+              <IonBadge key={i} color="medium" style={{ padding: '5px 10px' }}>
+                {fac}
+              </IonBadge>
+            ))}
           </div>
 
-          <div style={{ marginTop: '40px' }}>
+          {/* ✅ ปุ่มจองท้ายหน้า เหมือนแบด */}
+          <div style={{ marginTop: '30px', paddingBottom: '30px' }}>
             <IonButton
               expand="block"
               color="warning"
-              onClick={handleBooking}
               shape="round"
-              style={{ fontWeight: 'bold', height: '50px' }}
+              style={{ fontWeight: 'bold', height: '55px', '--color': 'black' }}
+              onClick={() => history.push(`/football-select`, { venue })}
             >
-              เช็คสนามว่าง / จองเลย <IonIcon icon={arrowForward} slot="end" />
+              จองสนามว่าง ({venue.name}) <IonIcon icon={arrowForward} slot="end" />
             </IonButton>
           </div>
-
         </div>
       </IonContent>
     </IonPage>

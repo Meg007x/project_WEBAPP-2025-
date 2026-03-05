@@ -56,11 +56,12 @@ const BookingDetail: React.FC = () => {
     day: 'numeric', month: 'short', year: '2-digit'
   });
 
-  const courtIds: number[] = bookingData.courtIds || [];
+  const courtIds: Array<string | number> = Array.isArray(bookingData.courtIds) ? bookingData.courtIds : [];
 
-  // เช็คว่าเป็นบอลไหม (เพื่อซ่อนรองเท้าตามเงื่อนไข)
   const isFootball = useMemo(() => {
-    const name = (venue.name || "").toLowerCase();
+    const name = String(venue.name || "").toLowerCase();
+    const vid = String(venue?.id || bookingData?.venueId || '').toLowerCase();
+
     return (
       name.includes('football') ||
       name.includes('soccer') ||
@@ -69,26 +70,44 @@ const BookingDetail: React.FC = () => {
       name.includes('ball') ||
       name.includes('สนามบอล') ||
       name.includes('ฟุตบอล') ||
-      name.includes('หญ้าเทียม')
+      name.includes('หญ้าเทียม') ||
+      vid.startsWith('football_')
     );
-  }, [venue]);
+  }, [venue, bookingData?.venueId]);
 
-  // ราคารวม (จากหน้าก่อนหน้าเป็นหลัก)
+  // ✅ แก้ไขฟังก์ชันแสดงชื่อสนามตามประเภทกีฬา
+  const formatCourtText = (idsAny: any[]) => {
+    const ids = Array.isArray(idsAny) ? idsAny : [];
+
+    if (isFootball) {
+      // ⚽ ฟุตบอล: Field 1, Field 2...
+      const labels = ids.map((x) => {
+        if (typeof x === 'number') return `Field ${x}`;
+        const s = String(x);
+        const m1 = s.match(/mock_field_(\d+)/i);
+        if (m1?.[1]) return `Field ${m1[1]}`;
+        const m2 = s.match(/(?:^|_)f(\d+)$/i) || s.match(/f(\d+)/i);
+        if (m2?.[1]) return `Field ${m2[1]}`;
+        return `Field ${s.replace(/^mock_/i, '').replace(/_/g, ' ').trim()}`;
+      });
+      return labels.join(', ');
+    }
+
+    // 🏸 แบดมินตัน: Court 1, Court 2...
+    return ids.map((x) => `Court ${String(x)}`).join(', ');
+  };
+
   const totalCourtPrice = Number(bookingData.totalPrice) || 0;
-
-  // ค่าเฉลี่ย/คน (ฐาน) — ปัดขึ้น
   const basePricePerHead = members.length > 0
     ? Math.ceil(totalCourtPrice / members.length)
     : totalCourtPrice;
 
-  // รวมสุทธิ (รองเท้า +20 เฉพาะแบด)
   const grandTotal = useMemo(() => {
     if (isFootball) return totalCourtPrice;
     const shoesCount = members.filter(m => m.hasShoes).length;
     return totalCourtPrice + (shoesCount * 20);
   }, [totalCourtPrice, members, isFootball]);
 
-  // ---------- Helpers (เวลา/วัน/slot) ----------
   const toMinutes = (t: string) => {
     const [h, m] = (t || "0:0").split(':').map(Number);
     return (h * 60) + (m || 0);
@@ -96,7 +115,6 @@ const BookingDetail: React.FC = () => {
 
   const dateKey = (iso: string) => {
     if (!iso) return '';
-    // เอา YYYY-MM-DD แบบ local จริงๆ (ลด timezone เพี้ยน)
     const d = new Date(iso);
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -104,9 +122,7 @@ const BookingDetail: React.FC = () => {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  // slot step (นาที) — ถ้าระบบคุณเป็นรายชั่วโมง ใช้ 60 ได้
   const SLOT_STEP_MIN = 60;
-
   const buildSlotKeys = (startMin: number, endMin: number) => {
     const slots: number[] = [];
     for (let m = startMin; m < endMin; m += SLOT_STEP_MIN) {
@@ -115,10 +131,9 @@ const BookingDetail: React.FC = () => {
     return slots;
   };
 
-  const makeReservationDocId = (venueId: string, dKey: string, courtId: number, slot: number) => {
-    return `${venueId}_${dKey}_court${courtId}_slot${slot}`;
+  const makeReservationDocId = (venueId: string, dKey: string, courtId: string | number, slot: number) => {
+    return `${venueId}_${dKey}_court${String(courtId)}_slot${slot}`;
   };
-  // -------------------------------------------
 
   const handleConfirmBooking = async () => {
     const user = auth.currentUser;
@@ -132,7 +147,6 @@ const BookingDetail: React.FC = () => {
     const startMin = toMinutes(bookingData.startTime);
     const endMin = toMinutes(bookingData.endTime);
 
-    // ✅ สร้าง ticket data (ไว้แสดงหน้า ticket)
     const ticketPayload = {
       venue: venue,
       venueId,
@@ -157,11 +171,7 @@ const BookingDetail: React.FC = () => {
     try {
       const bookingsCol = collection(db, 'bookings');
       const reservationsCol = collection(db, 'court_reservations');
-
-      // ✅ สร้าง bookingRef ก่อน เพื่อใช้ id ผูกกับ reservations
       const bookingRef = doc(bookingsCol);
-
-      // สร้าง slot ทั้งหมดที่ต้องล็อก
       const slots = buildSlotKeys(startMin, endMin);
 
       const reservationIds: string[] = [];
@@ -172,39 +182,25 @@ const BookingDetail: React.FC = () => {
       }
 
       await runTransaction(db, async (tx) => {
-        // 1) ตรวจทุก reservation doc ว่าถูกจองแล้วหรือยัง
         for (const rid of reservationIds) {
           const rRef = doc(reservationsCol, rid);
           const snap = await tx.get(rRef);
           if (snap.exists()) {
             const data = snap.data() as any;
-            const oldStart = data?.startTime || '';
-            const oldEnd = data?.endTime || '';
-            const oldCourt = data?.courtId ?? '';
-            const oldVenueName = data?.venueName || venue?.name || 'สนาม';
-
-            throw new Error(
-              `CONFLICT|จองซ้อนเวลาไม่ได้\n\nสนาม: ${oldVenueName}\nคอร์ด/สนาม: ${oldCourt}\nเวลา: ${oldStart} - ${oldEnd}`
-            );
+            throw new Error(`CONFLICT|จองซ้อนเวลาไม่ได้\n\nสนาม: ${data?.venueName}\nคอร์ด: ${data?.courtId}\nเวลา: ${data?.startTime}-${data?.endTime}`);
           }
         }
-
-        // 2) ถ้าไม่ชน -> create booking
         tx.set(bookingRef, {
           ...ticketPayload,
           id: bookingRef.id,
-          reservationIds,              // ✅ เก็บไว้ใช้ลบภายหลัง
+          reservationIds,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
-
-        // 3) create reservations ทุก slot
         for (const cId of courtIds) {
           for (const s of slots) {
             const rid = makeReservationDocId(venueId, dKey, cId, s);
-            const rRef = doc(reservationsCol, rid);
-
-            tx.set(rRef, {
+            tx.set(doc(reservationsCol, rid), {
               bookingId: bookingRef.id,
               userId: user.uid,
               venueId,
@@ -220,29 +216,19 @@ const BookingDetail: React.FC = () => {
         }
       });
 
-      // ✅ สำเร็จ -> ไปหน้าตั๋ว
       history.push({
         pathname: '/booking-ticket',
         state: { ...ticketPayload, id: bookingRef.id, isJustBooked: true }
       });
-
     } catch (e: any) {
       const msg = String(e?.message || '');
-
-      if (msg.startsWith('CONFLICT|')) {
-        const text = msg.replace('CONFLICT|', '');
-        setConflictMessage(text);
-        setShowConflictAlert(true);
-        return;
-      }
-
-      setConflictMessage('บันทึกการจองไม่สำเร็จ\n\n' + msg);
+      setConflictMessage(msg.startsWith('CONFLICT|') ? msg.replace('CONFLICT|', '') : 'บันทึกไม่สำเร็จ: ' + msg);
       setShowConflictAlert(true);
     }
   };
 
   const addMember = () => {
-    const names = ['เพื่อน A', 'เพื่อน B', 'น้อง C', 'พี่ D', 'เสี่ย E'];
+    const names = ['เพื่อน A', 'เพื่อน B', 'น้อง C', 'พี่ D'];
     const randomName = names[Math.floor(Math.random() * names.length)];
     setMembers([...members, { id: Date.now(), name: `${randomName} #${members.length}`, hasShoes: false }]);
   };
@@ -259,143 +245,55 @@ const BookingDetail: React.FC = () => {
           <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>สรุปยอด (Bill)</div>
         </IonToolbar>
       </IonHeader>
-
       <IonContent fullscreen className="lux-page">
         <div className="lux-container">
-
           <div style={{ marginBottom: '15px' }}>
-            <div style={{ color: '#FFD700', fontSize: '0.9rem', marginBottom: '5px' }}>ชื่อปาร์ตี้ (จะแสดงบนตั๋ว)</div>
-            <IonInput
-              value={partyName}
-              onIonChange={e => setPartyName(e.detail.value!)}
-              className="lux-input"
-              placeholder="ตั้งชื่อทีม..."
-              style={{ '--background': '#222', color: 'white', padding: '10px', borderRadius: '10px' } as any}
-            />
+            <div style={{ color: '#FFD700', fontSize: '0.9rem', marginBottom: '5px' }}>ชื่อปาร์ตี้</div>
+            <IonInput value={partyName} onIonChange={e => setPartyName(e.detail.value!)} className="lux-input" placeholder="ตั้งชื่อทีม..." style={{ '--background': '#222', color: 'white', padding: '10px', borderRadius: '10px' } as any} />
           </div>
-
-          {/* ใบเสร็จ */}
           <div className="lux-card" style={{ padding: '20px', marginBottom: '25px', border: '1px solid #FFD700' }}>
             <div style={{ borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '10px' }}>
               <h2 style={{ color: '#FFD700', margin: 0, fontSize: '1.5rem' }}>BOOKING BILL</h2>
-              <p style={{ color: '#888', margin: '5px 0 0 0', fontSize: '0.9rem' }}>{dateStr} @ {venue.name}</p>
+              <p style={{ color: '#888', margin: '5px 0 0 0' }}>{dateStr} @ {venue.name}</p>
             </div>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '0.9rem', color: '#ccc' }}>
-              <div>
-                <span style={{ color: '#888' }}>เวลา:</span> <br />
-                <span style={{ color: 'white', fontWeight: 'bold' }}>{bookingData.startTime} - {bookingData.endTime}</span>
-              </div>
-              <div>
-                <span style={{ color: '#888' }}>สนาม:</span> <br />
-                <span style={{ color: 'white', fontWeight: 'bold' }}>
-                  {isFootball ? `Field ${courtIds.join(', ')}` : `เบอร์ ${courtIds.join(', ')}`}
-                </span>
-              </div>
-              <div>
-                <span style={{ color: '#888' }}>จำนวนคน:</span> <br />
-                <span style={{ color: 'white' }}>{members.length} คน</span>
-              </div>
+              <div><span style={{ color: '#888' }}>เวลา:</span><br /><b>{bookingData.startTime}-{bookingData.endTime}</b></div>
+              <div><span style={{ color: '#888' }}>สนาม:</span><br /><b>{formatCourtText(courtIds)}</b></div>
             </div>
-
             <div style={{ borderBottom: '1px dashed #555', margin: '15px 0' }}></div>
-
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: '#888' }}>ราคารวมทั้งหมด</div>
-                <div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 'bold' }}>฿{grandTotal}</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.8rem', color: '#FFD700' }}>ค่าสนาม/คน (ฐาน)</div>
-                <div style={{ fontSize: '1.8rem', color: '#FFD700', fontWeight: '900' }}>฿{basePricePerHead}</div>
-              </div>
+              <div><div style={{ fontSize: '0.8rem', color: '#888' }}>รวม</div><div style={{ fontSize: '1.4rem', color: '#fff', fontWeight: 'bold' }}>฿{grandTotal}</div></div>
+              <div style={{ textAlign: 'right' }}><div style={{ fontSize: '0.8rem', color: '#FFD700' }}>ต่อคน</div><div style={{ fontSize: '1.8rem', color: '#FFD700', fontWeight: '900' }}>฿{basePricePerHead}</div></div>
             </div>
           </div>
-
-          {/* สมาชิก */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ color: 'white', margin: 0, borderLeft: '3px solid #FFD700', paddingLeft: '8px' }}>
-              สมาชิก ({members.length})
-            </h3>
-            <IonButton size="small" fill="outline" color="warning" onClick={addMember}>
-              <IonIcon icon={personAdd} slot="start" /> เพิ่มคน
-            </IonButton>
+            <h3 style={{ color: 'white', margin: 0, borderLeft: '3px solid #FFD700', paddingLeft: '8px' }}>สมาชิก ({members.length})</h3>
+            <IonButton size="small" fill="outline" color="warning" onClick={addMember}><IonIcon icon={personAdd} slot="start" />เพิ่ม</IonButton>
           </div>
-
-          <IonList style={{ background: 'transparent', paddingBottom: '0' }}>
+          <IonList style={{ background: 'transparent' }}>
             {members.map((m) => {
               const personalPrice = basePricePerHead + (!isFootball && m.hasShoes ? 20 : 0);
-
               return (
-                <IonItem
-                  key={m.id}
-                  lines="none"
-                  className="party-item"
-                  style={{ marginBottom: '10px', borderRadius: '10px', '--background': '#1a1a1a' } as any}
-                >
-                  <IonAvatar
-                    slot="start"
-                    style={{
-                      background: '#333',
-                      color: '#FFD700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 'bold',
-                      border: '1px solid #FFD700'
-                    }}
-                  >
-                    {m.name.charAt(0)}
-                  </IonAvatar>
-
-                  <IonLabel>
-                    <h3 style={{ color: '#fff' }}>{m.name}</h3>
-                    <p style={{ color: '#888', fontSize: '0.8rem' }}>
-                      จ่าย: <span style={{ color: '#FFD700', fontWeight: 'bold' }}>฿{personalPrice}</span>
-                    </p>
-                  </IonLabel>
-
+                <IonItem key={m.id} lines="none" className="party-item" style={{ marginBottom: '10px', borderRadius: '10px', '--background': '#1a1a1a' } as any}>
+                  <IonAvatar slot="start" style={{ background: '#333', color: '#FFD700', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '1px solid #FFD700' }}>{m.name.charAt(0)}</IonAvatar>
+                  <IonLabel><h3 style={{ color: '#fff' }}>{m.name}</h3><p style={{ color: '#FFD700' }}>฿{personalPrice}</p></IonLabel>
                   {!isFootball && (
                     <div style={{ display: 'flex', alignItems: 'center', color: '#aaa', fontSize: '0.8rem' }}>
                       <IonIcon icon={shirtOutline} style={{ marginRight: 5 }} />
-                      <span style={{ marginRight: 5 }}>รองเท้า (+20฿)</span>
-                      <IonCheckbox
-                        checked={m.hasShoes}
-                        onIonChange={() => toggleShoes(m.id)}
-                        color="warning"
-                        style={{ '--size': '18px', '--checkbox-background': '#333' } as any}
-                      />
+                      <IonCheckbox checked={m.hasShoes} onIonChange={() => toggleShoes(m.id)} color="warning" />
                     </div>
                   )}
                 </IonItem>
               );
             })}
           </IonList>
-
-          <div style={{ height: '50px' }}></div>
         </div>
-
-        <IonAlert
-          isOpen={showConflictAlert}
-          onDidDismiss={() => setShowConflictAlert(false)}
-          header="ไม่สามารถจองได้"
-          message={conflictMessage}
-          cssClass="lux-alert-preline"
-          buttons={['ตกลง']}
-        />
+        <IonAlert isOpen={showConflictAlert} onDidDismiss={() => setShowConflictAlert(false)} header="ไม่สามารถจองได้" message={conflictMessage} buttons={['ตกลง']} />
       </IonContent>
-
       <IonFooter className="ion-no-border">
         <IonToolbar className="lux-toolbar" style={{ padding: '10px' }}>
-          <IonButton
-            expand="block"
-            color="success"
-            size="large"
-            onClick={handleConfirmBooking}
-            style={{ fontWeight: 'bold', '--color': 'white', '--border-radius': '15px' } as any}
-          >
-            <IonIcon icon={walletOutline} slot="start" />
-            ยืนยันการจอง ฿{grandTotal}
+          <IonButton expand="block" color="success" size="large" onClick={handleConfirmBooking} style={{ fontWeight: 'bold', '--color': 'white', '--border-radius': '15px' } as any}>
+            <IonIcon icon={walletOutline} slot="start" />ยืนยัน ฿{grandTotal}
           </IonButton>
         </IonToolbar>
       </IonFooter>

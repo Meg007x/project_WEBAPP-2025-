@@ -1,5 +1,4 @@
-// src/pages/BookingTicket.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { IonContent, IonPage, IonButton, IonIcon, IonHeader, IonToolbar, IonButtons } from '@ionic/react';
 import { shareSocialOutline, homeOutline, downloadOutline, arrowBackOutline } from 'ionicons/icons';
 import { useLocation, useHistory } from 'react-router-dom';
@@ -25,6 +24,48 @@ const BookingTicket: React.FC = () => {
     totalPrice: rawData?.totalPrice || 0,
     isJustBooked: rawData?.isJustBooked ?? false
   };
+
+  const isFootball = useMemo(() => {
+    const name = String(venueName || '').toLowerCase();
+    const vid = String(rawData?.venueId || rawData?.venue?.id || '').toLowerCase();
+
+    return (
+      name.includes('football') ||
+      name.includes('soccer') ||
+      name.includes('field') ||
+      name.includes('arena') ||
+      name.includes('stadium') ||
+      name.includes('สนามบอล') ||
+      name.includes('ฟุตบอล') ||
+      name.includes('หญ้าเทียม') ||
+      vid.startsWith('football_')
+    );
+  }, [venueName, rawData?.venueId, rawData?.venue?.id]);
+
+  // ✅ แก้ไขฟังก์ชันแสดงชื่อสนาม: Football -> Field, Others -> Court
+  const formatCourtText = (courtIdsAny: any) => {
+    const ids = Array.isArray(courtIdsAny) ? courtIdsAny : [];
+
+    if (isFootball) {
+      // ⚽ ฟุตบอล: Field 1, Field 2...
+      const labels = ids.map((x) => {
+        if (typeof x === 'number') return `Field ${x}`;
+        const s = String(x);
+        const m1 = s.match(/mock_field_(\d+)/i);
+        if (m1?.[1]) return `Field ${m1[1]}`;
+        const m2 = s.match(/(?:^|_)f(\d+)$/i) || s.match(/f(\d+)/i);
+        if (m2?.[1]) return `Field ${m2[1]}`;
+        return `Field ${s.replace(/^mock_/i, '').replace(/_/g, ' ').trim()}`;
+      });
+      return labels.join(', ');
+    }
+
+    // 🏸 แบดมินตัน: Court 1, Court 2... (เปลี่ยนจาก # เป็น Court)
+    return ids.map((x) => `Court ${String(x)}`).join(', ');
+  };
+
+  const courtLabel = 'COURT / FIELD';
+  const courtValue = formatCourtText(data.courtIds);
 
   const handleClose = () => {
     if (data.isJustBooked) history.push('/home');
@@ -60,8 +101,8 @@ const BookingTicket: React.FC = () => {
             <div className="ticket-body">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 <div>
-                  <small>COURT / FIELD</small>
-                  <div className="val">#{data.courtIds.join(', ')}</div>
+                  <small>{courtLabel}</small>
+                  <div className="val">{courtValue}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <small>TIME</small>
