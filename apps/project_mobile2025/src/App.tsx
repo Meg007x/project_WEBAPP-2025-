@@ -86,15 +86,17 @@ const App: React.FC = () => (
         <PrivateRoute exact path="/badminton-venue" component={BadmintonVenue} />
         <PrivateRoute exact path="/court-select" component={CourtSelect} />
         <PrivateRoute exact path="/booking-detail" component={BookingDetail} />
-        <Route path="/booking-ticket" component={BookingTicket} />
+        {/* ✅ ปรับเป็น PrivateRoute เพื่อให้เข้าถึงข้อมูล User ได้ในการออกตั๋ว */}
+        <PrivateRoute exact path="/booking-ticket" component={BookingTicket} /> 
         <PrivateRoute exact path="/ticket-list" component={TicketList} />
 
-        <Route exact path="/venue-pcr" component={BadmintonVenuePCR} />
+        {/* ✅ ปรับเป็น PrivateRoute ทั้งหมดเพื่อป้องกัน User หลุดจากระบบขณะเลือกสนาม */}
+        <PrivateRoute exact path="/venue-pcr" component={BadmintonVenuePCR} />
         {/* หน้าเลือกว่าจะเอาคอร์ทไหน (แยก PS และ PCR) */}
-        <Route exact path="/ps-booking" component={CourtSelectPS} />
-        <Route exact path="/pcr-booking" component={CourtSelectPCR} />
-        <Route exact path="/venue-bluezone" component={BadmintonVenueBlueZone} />
-        <Route exact path="/booking-bluezone" component={CourtSelectBlueZone} />
+        <PrivateRoute exact path="/ps-booking" component={CourtSelectPS} />
+        <PrivateRoute exact path="/pcr-booking" component={CourtSelectPCR} />
+        <PrivateRoute exact path="/venue-bluezone" component={BadmintonVenueBlueZone} />
+        <PrivateRoute exact path="/booking-bluezone" component={CourtSelectBlueZone} />
 
         {/* Football flow */}
         <PrivateRoute exact path="/football-list" component={FootballFields} />
@@ -103,9 +105,9 @@ const App: React.FC = () => (
 
         {/* Search / Map */}
         <PrivateRoute exact path="/venue-search" component={VenueSearch} />
-        <PrivateRoute exact path="/venue/:id" component={VenueDetail} />
-
-
+        {/* ✅ ปรับ Path ให้ตรงกับฟังก์ชันนำทางในหน้า Search และ Home */}
+        {/* เปลี่ยนจาก VenueDetail เป็น FootballVenue เพื่อใช้รูปแบบเดียวกับแบตมินตัน */}
+        <PrivateRoute exact path="/venue-detail/:id" component={FootballVenue} />
 
         {/* Default */}
         <Route exact path="/">
@@ -113,7 +115,7 @@ const App: React.FC = () => (
         </Route>
 
         {/* Fallback (กันเข้าลิงก์ผิด) */}
-        <Redirect to="/login" />
+        <Route render={() => <Redirect to="/home" />} />
 
       </IonRouterOutlet>
     </IonReactRouter>
