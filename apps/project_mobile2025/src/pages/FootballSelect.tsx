@@ -8,11 +8,12 @@ import {
 import { checkmarkCircle, calendarOutline, arrowForwardOutline } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import './Home.css';
-
 import { db } from '../firebaseConfig';
 import { doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore';
-
 import { calcDurationHours, calcTotalPrice } from '../utils/pricing';
+
+// นำเข้าข้อมูลจำลอง
+import { footballVenuesData } from '../data/mockfootball';
 
 type VenueDoc = {
   id: string;
@@ -22,20 +23,18 @@ type VenueDoc = {
 };
 
 type SubVenueDoc = {
-  id: string;         // เช่น ko_f1
-  venueId: string;    // football_1
-  name: string;       // Field A
+  id: string;
+  venueId: string;
+  name: string;
 };
 
 const FootballSelect: React.FC = () => {
   const history = useHistory();
   const location = useLocation<any>();
-
   const venueId: string = String(location.state?.venueId ?? 'football_1');
 
   const [venue, setVenue] = useState<VenueDoc | null>(null);
   const [subvenues, setSubvenues] = useState<SubVenueDoc[]>([]);
-
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [startTime, setStartTime] = useState<string>('17:00');
   const [endTime, setEndTime] = useState<string>('19:00');
@@ -47,6 +46,29 @@ const FootballSelect: React.FC = () => {
 
     (async () => {
       try {
+        // ดัก Mock Data
+        if (venueId.startsWith('mock_')) {
+          const mockId = Number(venueId.replace('mock_', ''));
+          const mockData = footballVenuesData.find(v => v.id === mockId);
+          if (mockData && mounted) {
+            setVenue({
+              id: venueId,
+              name: mockData.name,
+              priceRange: mockData.priceRange,
+              totalCourts: mockData.totalCourts
+            });
+            // จำลองสนามย่อย
+            const mockSubvenues = Array.from({ length: mockData.totalCourts }, (_, i) => ({
+              id: `mock_field_${i + 1}`,
+              venueId: venueId,
+              name: `Field ${String.fromCharCode(65 + i)}`
+            }));
+            setSubvenues(mockSubvenues);
+            setSelectedFields([]);
+          }
+          return;
+        }
+
         // 1) venue
         const vRef = doc(db, 'venues', venueId);
         const vSnap = await getDoc(vRef);
@@ -59,11 +81,10 @@ const FootballSelect: React.FC = () => {
         const qSub = query(subRef, where('venueId', '==', venueId));
         const subSnap = await getDocs(qSub);
         const subs = subSnap.docs.map(d => ({ ...(d.data() as any), id: d.id })) as SubVenueDoc[];
-
         if (mounted) {
           setVenue(v);
           setSubvenues(subs);
-          setSelectedFields([]); // reset
+          setSelectedFields([]);
         }
       } catch (e) {
         console.error('load football select data error:', e);
@@ -85,27 +106,27 @@ const FootballSelect: React.FC = () => {
       const next = Math.min(24, s + 1);
       setEndTime(`${String(next).padStart(2, '0')}:00`);
     }
-  }, [startTime]); // eslint-disable-line
+  }, [startTime]);
+  // eslint-disable-line
 
   const timeOptions = useMemo(() => {
     const arr: string[] = [];
     for (let i = 10; i <= 24; i++) arr.push(`${String(i).padStart(2, '0')}:00`);
     return arr;
   }, []);
-
   const duration = useMemo(() => calcDurationHours(startTime, endTime), [startTime, endTime]);
 
-  // ✅ list สนามย่อยจาก Firestore
+  // list สนามย่อยจาก Firestore หรือ Mock
   const fields = useMemo(() => {
     if (subvenues.length > 0) {
       return subvenues.map((s) => ({
-        id: s.id,        // ใช้ docId ของ subvenues เลย (ชัวร์)
+        id: s.id,
         name: s.name,
         status: 'available' as 'available' | 'occupied'
       }));
     }
 
-    // fallback ถ้ายังไม่มี subvenues (กันหน้าว่าง)
+    // fallback
     const total = venue?.totalCourts ?? 2;
     return Array.from({ length: total }, (_, i) => ({
       id: `auto_${i + 1}`,
@@ -113,26 +134,24 @@ const FootballSelect: React.FC = () => {
       status: 'available' as const
     }));
   }, [subvenues, venue]);
-
-  // ✅ เลือกได้ทีละ 1 สนาม
+  
+  // เลือกได้ทีละ 1 สนาม
   const toggleField = (id: string) => {
     setSelectedFields(prev => (prev[0] === id ? [] : [id]));
   };
 
   const goToBooking = () => {
     if (!venue) return;
-
     const totalPrice = calcTotalPrice({
       priceRange: venue.priceRange,
       startTime,
       endTime,
       units: selectedFields.length
     });
-
     history.push({
       pathname: '/booking-detail',
       state: {
-        courtIds: selectedFields,   // ✅ ตอนนี้เป็น string[] (subvenue ids)
+        courtIds: selectedFields,
         startTime,
         endTime,
         duration,

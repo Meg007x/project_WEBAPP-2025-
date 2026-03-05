@@ -38,5 +38,19 @@ export const venuesData: Venue[] = [
     facilities: ['พื้นยางมาตรฐาน', 'ที่จอดรถ', 'พัดลมไอน้ำ'],
     imageUrl: 'https://static.wixstatic.com/media/7bfec5_647d39a988e74a2d956dac2f8e1d70af~mv2.webp/v1/fill/w_568,h_378,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/7bfec5_647d39a988e74a2d956dac2f8e1d70af~mv2.webp', // ✅ รูปใหม่ที่คุณขอ
     totalCourts: 6 // ✅ PCR มี 6 คอร์ด
-  }
+  },
+  // เพิ่มตัวเลือกที่ 3 ใน venuesData
+{
+  id: 3,
+  name: 'Blue Zone Badminton',
+  zone: 'ต.ศิลา / เลี่ยงเมือง',
+  distance: '8.2 กม.', 
+  rating: 4.5,
+  priceRange: '120 - 180',
+  openTime: '09:00 - 24:00',
+  location: 'ถ.เลี่ยงเมือง ต.ศิลา เมืองขอนแก่น',
+  facilities: ['สนามใหม่', 'ที่จอดรถกว้าง', 'เครื่องดื่ม'],
+  imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRgtIP-eO9f2hmYfvejHsMfl_mHOIxCe1Wl4Q&s',
+  totalCourts: 8
+}
 ];

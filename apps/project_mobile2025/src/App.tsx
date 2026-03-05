@@ -14,6 +14,11 @@ import CourtSelect from './pages/CourtSelect';
 import BookingDetail from './pages/BookingDetail';
 import BookingTicket from './pages/BookingTicket';
 import TicketList from './pages/TicketList';
+import BadmintonVenuePCR from './pages/BadmintonVenuePCR';
+import CourtSelectPS from './pages/CourtSelectPS';
+import CourtSelectPCR from './pages/CourtSelectPCR';
+import BadmintonVenueBlueZone from './pages/BadmintonVenueBlueZone';
+import CourtSelectBlueZone from './pages/CourtSelectBlueZone';
 
 import FootballFields from './pages/FootballFields';
 import FootballVenue from './pages/FootballVenue';
@@ -81,8 +86,15 @@ const App: React.FC = () => (
         <PrivateRoute exact path="/badminton-venue" component={BadmintonVenue} />
         <PrivateRoute exact path="/court-select" component={CourtSelect} />
         <PrivateRoute exact path="/booking-detail" component={BookingDetail} />
-        <PrivateRoute exact path="/booking-ticket" component={BookingTicket} />
+        <Route path="/booking-ticket" component={BookingTicket} />
         <PrivateRoute exact path="/ticket-list" component={TicketList} />
+
+        <Route exact path="/venue-pcr" component={BadmintonVenuePCR} />
+        {/* หน้าเลือกว่าจะเอาคอร์ทไหน (แยก PS และ PCR) */}
+        <Route exact path="/ps-booking" component={CourtSelectPS} />
+        <Route exact path="/pcr-booking" component={CourtSelectPCR} />
+        <Route exact path="/venue-bluezone" component={BadmintonVenueBlueZone} />
+        <Route exact path="/booking-bluezone" component={CourtSelectBlueZone} />
 
         {/* Football flow */}
         <PrivateRoute exact path="/football-list" component={FootballFields} />
@@ -92,6 +104,8 @@ const App: React.FC = () => (
         {/* Search / Map */}
         <PrivateRoute exact path="/venue-search" component={VenueSearch} />
         <PrivateRoute exact path="/venue/:id" component={VenueDetail} />
+
+
 
         {/* Default */}
         <Route exact path="/">

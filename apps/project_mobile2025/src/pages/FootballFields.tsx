@@ -2,17 +2,19 @@
 import React, { useEffect, useState } from 'react';
 import {
   IonContent, IonHeader, IonPage, IonToolbar, IonButtons, IonBackButton,
-  IonCard, IonCardContent, IonIcon, IonButton, IonBadge
+  IonCard, IonCardContent, IonIcon, IonButton, IonBadge, IonSearchbar
 } from '@ionic/react';
 import { locationOutline, timeOutline, star, walletOutline, arrowForward } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import './Home.css';
-
 import { db } from '../firebaseConfig';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
+// นำเข้าข้อมูลจำลอง
+import { footballVenuesData, FootballVenue } from '../data/mockfootball';
+
 type VenueDoc = {
-  id: string;              // เช่น football_1
+  id: string;
   type: 'football' | 'badminton';
   name: string;
   zone: string;
@@ -22,14 +24,16 @@ type VenueDoc = {
   closeTime?: string;
   location: string;
   imageUrl: string;
-  totalCourts?: number;    // แนะนำให้มี (จำนวนสนามย่อย)
+  totalCourts?: number;
   rating?: number;
+  facilities?: string[];
 };
 
 const FootballFields: React.FC = () => {
   const history = useHistory();
   const [list, setList] = useState<VenueDoc[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
 
   useEffect(() => {
     let mounted = true;
@@ -42,9 +46,34 @@ const FootballFields: React.FC = () => {
         const q = query(venuesRef, where('type', '==', 'football'));
         const snap = await getDocs(q);
 
-        const rows = snap.docs.map(d => ({ ...(d.data() as any), id: d.id })) as VenueDoc[];
+        let rows = snap.docs.map(d => ({ ...(d.data() as any), id: d.id })) as VenueDoc[];
 
-        if (mounted) setList(rows);
+        // แทรก Mock Data จาก mockfootball.ts เข้าไปเสมอ
+        const mockVenues: VenueDoc[] = footballVenuesData.map(v => ({
+          id: `mock_${v.id}`,
+          type: 'football',
+          name: v.name,
+          zone: v.zone,
+          distance: v.distance,
+          priceRange: v.priceRange,
+          openTime: v.openTime.split(' - ')[0],
+          closeTime: v.openTime.split(' - ')[1],
+          location: v.location,
+          imageUrl: v.imageUrl,
+          rating: v.rating,
+          totalCourts: v.totalCourts,
+          facilities: v.facilities
+        }));
+
+        // รวมข้อมูลฐานข้อมูลกับ Mock Data (ป้องกัน ID ซ้ำ)
+        const combinedList = [...mockVenues];
+        rows.forEach(dbVenue => {
+           if(!combinedList.find(m => m.name === dbVenue.name)) {
+               combinedList.push(dbVenue);
+           }
+        });
+
+        if (mounted) setList(combinedList);
       } catch (e) {
         console.error('load football venues error:', e);
         if (mounted) setList([]);
@@ -59,9 +88,14 @@ const FootballFields: React.FC = () => {
   const openVenueDetail = (v: VenueDoc) => {
     history.push({
       pathname: '/football-venue',
-      state: { venueId: v.id } // ✅ ส่ง docId จริง เช่น football_1
+      state: { venueId: v.id }
     });
   };
+
+  const filteredList = list.filter(v => 
+    v.name.toLowerCase().includes(searchText.toLowerCase()) || 
+    v.zone.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <IonPage>
@@ -74,16 +108,25 @@ const FootballFields: React.FC = () => {
 
       <IonContent fullscreen className="lux-page">
         <div className="lux-container">
+          
+          <IonSearchbar 
+            value={searchText} 
+            onIonInput={(e) => setSearchText(e.detail.value!)} 
+            placeholder="ค้นหาชื่อสนามฟุตบอล..." 
+            animated={true}
+            style={{ '--background': '#222', '--color': '#fff', padding: '0', paddingBottom: '15px' } as any}
+          />
+
           {loading ? (
             <div style={{ textAlign: 'center', marginTop: '40%', color: '#666' }}>
               <p>กำลังโหลดสนาม...</p>
             </div>
-          ) : list.length === 0 ? (
+          ) : filteredList.length === 0 ? (
             <div style={{ textAlign: 'center', marginTop: '40%', color: '#666' }}>
-              <p>ยังไม่มีสนามฟุตบอลในฐานข้อมูล</p>
+              <p>ไม่พบสนามที่คุณค้นหา</p>
             </div>
           ) : (
-            list.map((v) => (
+            filteredList.map((v) => (
               <IonCard
                 key={v.id}
                 className="lux-card"

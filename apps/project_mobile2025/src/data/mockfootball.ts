@@ -12,6 +12,7 @@ export interface FootballVenue {
   facilities: string[];
   imageUrl: string;
   totalCourts: number;    // จำนวนสนามย่อย (Field A,B,C...)
+  mapUrl?: string; // ✅ 1. เพิ่มบรรทัดนี้เข้ามา
 }
 
 export const footballVenuesData: FootballVenue[] = [
@@ -26,7 +27,8 @@ export const footballVenuesData: FootballVenue[] = [
     location: 'ใกล้โซนโนนม่วง มหาวิทยาลัยขอนแก่น',
     facilities: ['หญ้าเทียม', 'ที่จอดรถ', 'ห้องน้ำ', 'ไฟส่องสว่าง'],
     imageUrl: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=60',
-    totalCourts: 2
+    totalCourts: 2,
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=16.476110786477136, 102.81633838001528' // ✅ 2. เพิ่ม URL แผนที่ Google Maps สำหรับสนามนี้
   },
   {
     id: 2,
@@ -39,7 +41,8 @@ export const footballVenuesData: FootballVenue[] = [
     location: 'โซนบึงหนองโคตร เมืองขอนแก่น',
     facilities: ['หญ้าเทียม', 'ที่จอดรถ', 'ร้านน้ำ', 'ลูกบอลฟรี'],
     imageUrl: 'https://images.unsplash.com/photo-1521412644187-c49fa049e84d?auto=format&fit=crop&w=1000&q=60',
-    totalCourts: 3
+    totalCourts: 3,
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=16.476110786477136, 102.81633838001528'
   },
   {
     id: 3,
@@ -52,6 +55,7 @@ export const footballVenuesData: FootballVenue[] = [
     location: 'โซนกังสดาล ใกล้แหล่งของกิน',
     facilities: ['สนามในร่มบางส่วน', 'WiFi', 'ที่จอดรถ', 'ห้องอาบน้ำ'],
     imageUrl: 'https://images.unsplash.com/photo-1551958219-acbc608c6377?auto=format&fit=crop&w=1000&q=60',
-    totalCourts: 2
+    totalCourts: 2,
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=16.476110786477136, 102.81633838001528'
   }
 ];

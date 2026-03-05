@@ -14,6 +14,9 @@ import './Home.css';
 import { db } from '../firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 
+// นำเข้าข้อมูลจำลอง
+import { footballVenuesData } from '../data/mockfootball';
+
 type VenueDoc = {
   id: string;
   type: 'football' | 'badminton';
@@ -33,7 +36,6 @@ type VenueDoc = {
 const FootballVenue: React.FC = () => {
   const location = useLocation<any>();
   const history = useHistory();
-
   const venueId: string = String(location.state?.venueId ?? 'football_1');
 
   const [venue, setVenue] = useState<VenueDoc | null>(null);
@@ -45,6 +47,31 @@ const FootballVenue: React.FC = () => {
     (async () => {
       try {
         setLoading(true);
+
+        // ดัก Mock Data
+        if (venueId.startsWith('mock_')) {
+          const mockId = Number(venueId.replace('mock_', ''));
+          const mockData = footballVenuesData.find(v => v.id === mockId);
+          if (mockData && mounted) {
+            setVenue({
+              id: venueId,
+              type: 'football',
+              name: mockData.name,
+              zone: mockData.zone,
+              distance: mockData.distance,
+              rating: mockData.rating,
+              priceRange: mockData.priceRange,
+              openTime: mockData.openTime.split(' - ')[0],
+              closeTime: mockData.openTime.split(' - ')[1],
+              location: mockData.location,
+              facilities: mockData.facilities,
+              imageUrl: mockData.imageUrl,
+              totalCourts: mockData.totalCourts
+            });
+          }
+          return;
+        }
+
         const ref = doc(db, 'venues', venueId);
         const snap = await getDoc(ref);
 
@@ -70,7 +97,7 @@ const FootballVenue: React.FC = () => {
     if (!venue) return;
     history.push({
       pathname: '/football-select',
-      state: { venueId: venue.id } // ✅ ส่ง id ต่อ
+      state: { venueId: venue.id }
     });
   };
 
@@ -142,10 +169,22 @@ const FootballVenue: React.FC = () => {
 
           <div style={{ background: '#222', padding: '15px', borderRadius: '15px', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '15px' }}>
             <IonIcon icon={mapOutline} style={{ fontSize: '2rem', color: '#FFD700' }} />
-            <div>
+            <div style={{ flex: 1 }}>
               <div style={{ color: '#fff', fontWeight: 'bold' }}>ตำแหน่งที่ตั้ง / โซน</div>
               <div style={{ color: '#888', fontSize: '0.9rem' }}>{venue.location} ({venue.zone})</div>
             </div>
+            
+            {/* แก้เฉพาะส่วนนี้ครับ */}
+            <IonButton 
+              fill="outline" 
+              color="warning" 
+              onClick={() => {
+                const mapQuery = encodeURIComponent(`${venue.name} ขอนแก่น`);
+                window.open(`https://maps.google.com/?q=${mapQuery}`, '_blank');
+              }}
+            >
+              ดูแผนที่
+            </IonButton>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>

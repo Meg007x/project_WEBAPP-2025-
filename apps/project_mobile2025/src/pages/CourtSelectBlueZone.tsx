@@ -1,4 +1,4 @@
-// src/pages/CourtSelectPS.tsx
+// src/pages/CourtSelectBlueZone.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   IonContent, IonHeader, IonPage, IonToolbar, IonButtons, IonBackButton,
@@ -6,32 +6,30 @@ import {
   IonSelect, IonSelectOption, useIonViewWillEnter, IonDatetimeButton
 } from '@ionic/react';
 import { checkmarkCircle, calendarOutline, arrowForwardOutline } from 'ionicons/icons';
-import { useHistory, useLocation } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import './Home.css';
-
 import { calcDurationHours, calcTotalPrice } from '../utils/pricing';
 
-const CourtSelectPS: React.FC = () => {
+const CourtSelectBlueZone: React.FC = () => {
   const history = useHistory();
-  const location = useLocation<any>();
 
   const [selectedCourts, setSelectedCourts] = useState<number[]>([]);
   const [startTime, setStartTime] = useState<string>('17:00');
   const [endTime, setEndTime] = useState<string>('18:00');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString());
 
-  const [venue, setVenue] = useState<any>({
-    id: 1,
-    name: 'PS Badminton',
-    totalCourts: 8, // ✅ ฟิกซ์ 8 คอร์ทสำหรับ PS
-    priceRange: '120 - 180'
-  });
+  // ข้อมูลสนาม Blue Zone
+  const venue = { 
+    id: 3, 
+    name: 'Blue Zone Badminton', 
+    priceRange: '120 - 180' 
+  };
 
   useIonViewWillEnter(() => {
-    if (location.state?.venue) setVenue(location.state.venue);
     setSelectedCourts([]);
   });
 
+  // ลอจิกปรับเวลาสิ้นสุดอัตโนมัติ
   useEffect(() => {
     const s = Number(startTime.split(':')[0]);
     const e = Number(endTime.split(':')[0]);
@@ -41,45 +39,36 @@ const CourtSelectPS: React.FC = () => {
     }
   }, [startTime]);
 
-  // สร้างคอร์ท 8 คอร์ทเสมอสำหรับ PS
-  const courts = useMemo(() => {
-    return Array.from({ length: 8 }, (_, i) => ({
-      id: i + 1,
-      status: 'available' as 'available' | 'occupied'
-    }));
-  }, []);
-
+  const courts = useMemo(() => Array.from({ length: 8 }, (_, i) => ({ id: i + 1 })), []);
+  
   const timeOptions = useMemo(() => {
-    const arr: string[] = [];
-    for (let i = 10; i <= 24; i++) arr.push(`${String(i).padStart(2, '0')}:00`);
+    const arr = [];
+    for (let i = 9; i <= 24; i++) arr.push(`${String(i).padStart(2, '0')}:00`);
     return arr;
   }, []);
-
-  const duration = useMemo(() => calcDurationHours(startTime, endTime), [startTime, endTime]);
 
   const toggleCourt = (id: number) => {
     setSelectedCourts(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
   };
 
   const goToBooking = () => {
-    let finalPrice = calcTotalPrice({
-      priceRange: venue?.priceRange,
-      startTime,
-      endTime,
-      units: selectedCourts.length
+    const finalPrice = calcTotalPrice({ 
+        priceRange: venue.priceRange, 
+        startTime, 
+        endTime, 
+        units: selectedCourts.length 
     });
-
+    
     history.push({
       pathname: '/booking-detail',
-      state: {
-        courtIds: selectedCourts,
-        startTime,
-        endTime,
-        duration,
-        date: selectedDate,
+      state: { 
+        courtIds: selectedCourts, 
+        startTime, 
+        endTime, 
+        duration: calcDurationHours(startTime, endTime), 
+        date: selectedDate, 
         totalPrice: finalPrice, 
-        venue: { ...venue, name: 'PS Badminton' }
-        // ❌ เอาการส่งค่ารองเท้าจากหน้านี้ออกไปแล้ว
+        venue: venue 
       }
     });
   };
@@ -88,21 +77,29 @@ const CourtSelectPS: React.FC = () => {
     <IonPage>
       <IonHeader className="ion-no-border">
         <IonToolbar className="lux-toolbar">
-          <IonButtons slot="start"><IonBackButton defaultHref="/badminton-venue" color="light" /></IonButtons>
-          <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>จองสนาม ({venue.name})</div>
+          <IonButtons slot="start"><IonBackButton defaultHref="/venue-bluezone" color="light" /></IonButtons>
+          <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>เลือกคอร์ท (Blue Zone)</div>
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen className="lux-page">
         <div className="lux-container">
+          
+          {/* Card เลือกวันและเวลา แบบเดียวกับ PS/PCR */}
           <div className="lux-card" style={{ padding: '20px', marginBottom: '25px', border: '1px solid #FFD700' }}>
-             <div style={{ marginBottom: '15px' }}>
+            <div style={{ marginBottom: '15px' }}>
               <div style={{ color: '#FFD700', fontSize: '0.9rem', marginBottom: '8px' }}>
-                <IonIcon icon={calendarOutline} style={{ verticalAlign: 'middle' }} /> วันที่
+                <IonIcon icon={calendarOutline} style={{ verticalAlign: 'middle' }} /> วันที่จอง
               </div>
-              <IonDatetimeButton datetime="datetime-ps"></IonDatetimeButton>
+              <IonDatetimeButton datetime="dt-blue"></IonDatetimeButton>
               <IonModal keepContentsMounted={true}>
-                <IonDatetime id="datetime-ps" presentation="date" value={selectedDate} onIonChange={e => setSelectedDate(e.detail.value as string)} style={{ '--background': '#1a1a1a', '--ion-text-color': '#fff', '--accent-color': '#FFD700' } as any} />
+                <IonDatetime 
+                  id="dt-blue" 
+                  presentation="date" 
+                  value={selectedDate} 
+                  onIonChange={e => setSelectedDate(e.detail.value as string)} 
+                  style={{ '--background': '#1a1a1a', '--ion-text-color': '#fff' } as any}
+                />
               </IonModal>
             </div>
 
@@ -128,12 +125,17 @@ const CourtSelectPS: React.FC = () => {
           </div>
 
           <h3 style={{ color: 'white', borderLeft: '4px solid #FFD700', paddingLeft: '10px' }}>
-            เลือกสนามว่าง ({courts.length} คอร์ท)
+            เลือกสนามว่าง (8 คอร์ท)
           </h3>
 
+          {/* ใช้ Grid 8 คอร์ท เหมือน PS */}
           <div className="court-grid-8">
             {courts.map((court) => (
-              <div key={court.id} className={`court-box ${selectedCourts.includes(court.id) ? 'selected' : ''}`} onClick={() => toggleCourt(court.id)}>
+              <div 
+                key={court.id} 
+                className={`court-box ${selectedCourts.includes(court.id) ? 'selected' : ''}`} 
+                onClick={() => toggleCourt(court.id)}
+              >
                 <div className="court-lines"></div>
                 <h3 style={{ margin: 0, zIndex: 2, color: selectedCourts.includes(court.id) ? 'black' : 'white' }}>{court.id}</h3>
                 {selectedCourts.includes(court.id) && <IonIcon icon={checkmarkCircle} style={{ position: 'absolute', top: 5, right: 5, color: 'black' }} />}
@@ -149,7 +151,7 @@ const CourtSelectPS: React.FC = () => {
         <IonFooter className="ion-no-border">
           <IonToolbar className="lux-toolbar">
             <IonButton expand="block" color="warning" onClick={goToBooking} style={{ margin: '10px', fontWeight: 'bold', '--color': 'black' } as any}>
-              ต่อไป ({selectedCourts.length} คอร์ท)
+              จองที่เลือก ({selectedCourts.length} คอร์ท)
             </IonButton>
           </IonToolbar>
         </IonFooter>
@@ -158,4 +160,4 @@ const CourtSelectPS: React.FC = () => {
   );
 };
 
-export default CourtSelectPS;
+export default CourtSelectBlueZone;
