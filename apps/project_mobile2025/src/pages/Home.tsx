@@ -1,133 +1,200 @@
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar ,  IonSearchbar, IonGrid, IonRow, IonCol, IonCard, IonCardHeader, 
-  IonCardSubtitle, IonCardTitle, IonCardContent, IonIcon, IonText, 
-  IonButton, IonBadge, IonAvatar, IonButtons } from '@ionic/react';
-import ExploreContainer from '../components/ExploreContainer';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  IonContent, IonPage, IonSearchbar,
+  IonGrid, IonRow, IonCol, IonCard, IonCardHeader,
+  IonCardSubtitle, IonCardTitle, IonCardContent, IonIcon,
+  IonText, IonButton, IonBadge
+} from '@ionic/react';
 import './Home.css';
-import React from 'react';
-import { 
-  footballOutline, alertCircleOutline, locationOutline, 
-  searchOutline, notificationsOutline, personCircleOutline 
+import {
+  locationOutline, searchOutline, notificationsOutline,
+  qrCodeOutline, flashOutline
 } from 'ionicons/icons';
-import { useIonRouter } from '@ionic/react';
+import { useHistory } from 'react-router-dom';
+import { seedDatabase } from '../data/seed'; // import มาจากไฟล์ที่เราสร้าง
+
+// ✅ เพิ่ม: ดึงข้อมูล user จาก Firebase Auth
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
 
 const Home: React.FC = () => {
-  const router = useIonRouter();
+  const history = useHistory();
+
+  // ✅ เพิ่ม: state เก็บ user + ชื่อที่จะแสดง
+  const [user, setUser] = useState<User | null>(null);
+  const [displayName, setDisplayName] = useState<string>(''); // ชื่อที่จะโชว์บน UI
+
+  // ✅ เพิ่ม: เอาไว้โชว์คำทักทายตามเวลา (optional แต่เข้ากับธีม)
+  const greetingText = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return '👋 สวัสดีตอนเช้า';
+    if (h < 18) return '👋 สวัสดีตอนบ่าย';
+    return '👋 สวัสดีตอนเย็น';
+  }, []);
+
+  useEffect(() => {
+    // ✅ ฟังสถานะล็อกอินแบบ realtime
+    const unsub = onAuthStateChanged(auth, (u) => {
+      // ถ้าไม่ได้ล็อกอิน -> เด้งไปหน้า login
+      if (!u) {
+        setUser(null);
+        setDisplayName('');
+        history.replace('/login');
+        return;
+      }
+
+      setUser(u);
+
+      // ✅ ลำดับชื่อที่ใช้แสดง:
+      // 1) displayName (Google / หรือคุณ set ไว้)
+      // 2) email (ตัดก่อน @)
+      // 3) phoneNumber
+      const nameFromDisplay = (u.displayName || '').trim();
+      const nameFromEmail = (u.email ? u.email.split('@')[0] : '').trim();
+      const nameFromPhone = (u.phoneNumber || '').trim();
+
+      setDisplayName(nameFromDisplay || nameFromEmail || nameFromPhone || 'User');
+    });
+
+    return () => unsub();
+  }, [history]);
+
   return (
     <IonPage>
-      {/* --- Header ส่วนบน --- */}
-      <IonHeader className="ion-no-border">
-        <IonToolbar className="home-toolbar">
-          <div className="header-container">
+      {/* ❌ เอา IonHeader ออกไปเลย เพื่อให้ข้างบนไม่ Fix */}
+
+      <IonContent fullscreen className="lux-page">
+
+        {/* ✅ สร้าง Wrapper ใหญ่สุด ใส่ padding 20px รอบทิศ */}
+        <div style={{ padding: '20px', paddingBottom: '40px' }}>
+
+          {/* --- ส่วนหัว (Header) ย้ายมาอยู่ที่นี่แทน --- */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', marginTop: '10px' }}>
             <div>
-              <IonText color="medium">
-                <small>👋 สวัสดีตอนเย็น</small>
-              </IonText>
-              <h2 className="user-name">Meg007x</h2>
+              <IonText color="medium"><small>{greetingText}</small></IonText>
+
+              {/* ✅ เปลี่ยนจาก hardcode เป็นชื่อผู้ใช้จริง */}
+              <h2 className="user-name" style={{ margin: 0, fontSize: '1.8rem' }}>
+                {displayName || '...'}
+              </h2>
+
+              {/* ✅ (ไม่บังคับ) ถ้าอยากโชว์อีเมล/เบอร์เล็กๆ ใต้ชื่อ */}
+              {user?.email && (
+                <IonText color="medium">
+                  <small style={{ opacity: 0.7 }}>{user.email}</small>
+                </IonText>
+              )}
+              {!user?.email && user?.phoneNumber && (
+                <IonText color="medium">
+                  <small style={{ opacity: 0.7 }}>{user.phoneNumber}</small>
+                </IonText>
+              )}
             </div>
-            <IonButtons slot="end">
-              <IonButton className="notify-btn">
-                <IonIcon icon={notificationsOutline} />
-                <span className="dot"></span>
-              </IonButton>
-            </IonButtons>
-          </div>
-        </IonToolbar>
-      </IonHeader>
 
-      <IonContent fullscreen className="ion-padding-horizontal home-content">
-        
-        {/* --- Search Bar --- */}
-        <div className="search-section">
-          <IonSearchbar 
-            placeholder="ค้นหาสนาม, กีฬา..." 
-            className="custom-search"
-            searchIcon={searchOutline}
-          ></IonSearchbar>
-        </div>
-
-        {/* --- Hero Banner (โปรโมชั่นหรือไฮไลท์) --- */}
-        <div className="hero-banner">
-          <div className="hero-text">
-            <h3>เตะบอลกันมั้ย?</h3>
-            <p>จองสนามใกล้ ม. วันนี้<br/>รับส่วนลด 10%</p>
-            <IonButton size="small" color="light" shape="round">
-              ดูเลย
-            </IonButton>
-          </div>
-          <img src="https://cdn-icons-png.flaticon.com/512/3214/3214648.png" alt="sport" className="hero-img" />
-        </div>
-
-        {/* --- หมวดหมู่กีฬา (Category) --- */}
-        <div className="section-title">
-          <h3>เลือกกีฬา</h3>
-        </div>
-        
-        <IonGrid className="category-grid">
-          <IonRow>
-            {/* กล่องแบดมินตัน */}
-          <IonCol size="6">
-            <div className="sport-card" onClick={() => router.push('/badminton')}>
-              <div className="icon-bg">🏸</div>
-              <h4>แบดมินตัน</h4>
-              <p>12 สนาม</p>
+            <div style={{ background: '#1a1a1a', padding: '10px', borderRadius: '50%', border: '1px solid #333' }}>
+              <IonIcon icon={notificationsOutline} color="warning" style={{ fontSize: '1.2rem' }} />
             </div>
-          </IonCol>
+          </div>
 
-            {/* กล่องฟุตบอล */}
-            <IonCol size="6">
-              <div className="sport-card" onClick={() => router.push('/football')}>
-                <div className="icon-bg">⚽</div>
-                <h4>ฟุตบอล</h4>
-                <p>8 สนาม</p>
+          {/* Search */}
+          <div className="search-section" style={{ marginBottom: '25px' }}>
+            <IonSearchbar
+              placeholder="ค้นหาสนาม, กีฬา..."
+              className="custom-search"
+              searchIcon={searchOutline}
+              style={{ padding: 0 }} // ล้าง padding เดิมของ searchbar
+            ></IonSearchbar>
+          </div>
+
+          {/* ปุ่ม Wallet */}
+          <div style={{ marginBottom: '25px' }}>
+            <div
+              onClick={() => history.push('/ticket-list')}
+              style={{
+                padding: '20px',
+                background: 'linear-gradient(90deg, #FFD700 0%, #b8860b 100%)',
+                borderRadius: '20px',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                color: '#000', boxShadow: '0 8px 20px rgba(255, 215, 0, 0.25)', cursor: 'pointer'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <IonIcon icon={qrCodeOutline} style={{ fontSize: '2.2rem' }} />
+                <div>
+                  <h4 style={{ margin: 0, fontWeight: '900', fontSize: '1.1rem' }}>ตั๋วของฉัน (Wallet)</h4>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', opacity: 0.8 }}>ดูประวัติการจองทั้งหมด</p>
+                </div>
               </div>
-            </IonCol>
-          </IonRow>
-        </IonGrid>
-
-        {/* --- สนามแนะนำ (Recommended) --- */}
-        <div className="section-header">
-          <h3>สนามยอดฮิต 🔥</h3>
-          <IonButton fill="clear" size="small">ดูทั้งหมด</IonButton>
-        </div>
-
-        {/* Card สนามที่ 1 */}
-        <IonCard className="field-card">
-          <div className="card-img-wrapper">
-             {/* ใส่รูปจริงแทน src นี้ได้เลย */}
-            <img src="https://images.unsplash.com/photo-1529900748604-07564a03e7a6?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60" alt="field" />
-            <IonBadge color="warning" className="rating-badge">⭐ 4.8</IonBadge>
-          </div>
-          <IonCardHeader>
-            <IonCardSubtitle className="field-type">ฟุตบอลหญ้าเทียม (7 คน)</IonCardSubtitle>
-            <IonCardTitle className="field-title">สนาม KS Soccer Club</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <div className="field-info">
-              <span><IonIcon icon={locationOutline} /> 1.2 กม.</span>
-              <span className="price">฿800 / ชม.</span>
+              <IonIcon icon={flashOutline} style={{ fontSize: '1.4rem' }} />
             </div>
-          </IonCardContent>
-        </IonCard>
-
-        {/* Card สนามที่ 2 */}
-        <IonCard className="field-card">
-          <div className="card-img-wrapper">
-            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh3xY_ZSFMhPL9kE0poDTYtijzEDCHfJfjmX5Y_36hC790mTXsjh3CE6tRudLCi_a1LCbgzmauRhJv5aAA7kDubm46SJLULYtHtUxL9bcAicbs0_xh4j82WufpFLeGtoXtMxojnVuHq9iyuWVpGlRfCb5oZJcLgQiMUHEW21q3WEC3GHwgXz9OUHAhmyzg/s1360/PS01.jpg" alt="field" />
-            <IonBadge color="warning" className="rating-badge">⭐ 4.5</IonBadge>
           </div>
-          <IonCardHeader>
-            <IonCardSubtitle className="field-type">แบดมินตัน (ในร่ม)</IonCardSubtitle>
-            <IonCardTitle className="field-title">Complex Court</IonCardTitle>
-          </IonCardHeader>
-          <IonCardContent>
-            <div className="field-info">
-              <span><IonIcon icon={locationOutline} /> 0.8 กม.</span>
-              <span className="price">฿120 / ชม.</span>
-            </div>
-          </IonCardContent>
-        </IonCard>
 
-        <div style={{ height: '50px' }}></div> {/* Spacer ด้านล่าง */}
+          {/* Hero Banner */}
+          <div className="hero-banner" style={{ borderRadius: '20px', marginBottom: '25px' }}>
+            <div className="hero-text" style={{ padding: '24px' }}>
+              <h3 style={{ fontSize: '1.5rem' }}>เตะบอลกันมั้ย?</h3>
+              <p>จองสนามใกล้ ม. วันนี้<br />รับส่วนลด 10%</p>
+
+              {/* ✅ เปลี่ยนให้พาไปหน้าฟุตบอลจริง */}
+              <IonButton
+                size="small"
+                color="light"
+                shape="round"
+                onClick={() => history.push('/football-list')}
+              >
+                ดูเลย
+              </IonButton>
+            </div>
+            <img src="https://cdn-icons-png.flaticon.com/512/3214/3214648.png" alt="sport" className="hero-img" style={{ right: '15px' }} />
+          </div>
+
+          {/* Category Grid */}
+          <div className="section-title" style={{ marginBottom: '15px' }}><h3>เลือกกีฬา</h3></div>
+
+          <IonGrid style={{ padding: 0, marginBottom: '25px' }}>
+            <IonRow>
+              <IonCol size="6" style={{ paddingRight: '8px' }}>
+                <div className="sport-card" onClick={() => history.push('/badminton-list')} style={{ borderRadius: '20px' }}>
+                  <div className="icon-bg">🏸</div>
+                  <h4>แบดมินตัน</h4>
+                  <p>12 สนาม</p>
+                </div>
+              </IonCol>
+              <IonCol size="6" style={{ paddingLeft: '8px' }}>
+                {/* ✅ เปลี่ยนจาก alert('🚧') เป็นไปหน้าฟุตบอล */}
+                <div className="sport-card" onClick={() => history.push('/football-list')} style={{ borderRadius: '20px' }}>
+                  <div className="icon-bg">⚽</div>
+                  <h4>ฟุตบอล</h4>
+                  <p>8 สนาม</p>
+                </div>
+              </IonCol>
+            </IonRow>
+          </IonGrid>
+
+          {/* Recommended Fields */}
+          <div className="section-header" style={{ marginBottom: '15px' }}>
+            <h3>สนามยอดฮิต 🔥</h3>
+            <IonButton fill="clear" size="small" color="warning">ดูทั้งหมด</IonButton>
+          </div>
+
+          <IonCard className="field-card" onClick={() => history.push('/badminton-venue')} style={{ borderRadius: '24px', margin: 0, width: '100%' }}>
+            <div className="card-img-wrapper">
+              <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh3xY_ZSFMhPL9kE0poDTYtijzEDCHfJfjmX5Y_36hC790mTXsjh3CE6tRudLCi_a1LCbgzmauRhJv5aAA7kDubm46SJLULYtHtUxL9bcAicbs0_xh4j82WufpFLeGtoXtMxojnVuHq9iyuWVpGlRfCb5oZJcLgQiMUHEW21q3WEC3GHwgXz9OUHAhmyzg/s1360/PS01.jpg" alt="field" />
+              <IonBadge color="warning" className="rating-badge" style={{ top: '15px', right: '15px' }}>⭐ 4.5</IonBadge>
+            </div>
+            <IonCardHeader>
+              <IonCardSubtitle className="field-type">แบดมินตัน (ในร่ม)</IonCardSubtitle>
+              <IonCardTitle className="field-title">PS Badminton</IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <div className="field-info">
+                <span><IonIcon icon={locationOutline} /> 0.8 กม.</span>
+                <span className="price">฿120 / ชม.</span>
+              </div>
+            </IonCardContent>
+          </IonCard>
+
+        </div> {/* จบ Wrapper */}
       </IonContent>
     </IonPage>
   );

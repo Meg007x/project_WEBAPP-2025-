@@ -1,128 +1,128 @@
-import React from 'react';
+// src/pages/FootballFields.tsx
+import React, { useEffect, useState } from 'react';
 import {
-  IonContent, IonHeader, IonPage, IonTitle, IonToolbar,
-  IonButtons, IonBackButton, IonCard, IonCardHeader,
-  IonCardSubtitle, IonCardTitle, IonCardContent,
-  IonIcon, IonBadge, IonButton, IonSearchbar
+  IonContent, IonHeader, IonPage, IonToolbar, IonButtons, IonBackButton,
+  IonCard, IonCardContent, IonIcon, IonButton, IonBadge
 } from '@ionic/react';
-import { locationOutline, navigateCircleOutline } from 'ionicons/icons';
+import { locationOutline, timeOutline, star, walletOutline, arrowForward } from 'ionicons/icons';
+import { useHistory } from 'react-router-dom';
 import './Home.css';
 
-const FootballFields: React.FC = () => {
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
-  // 🔹 Mock Data สนามฟุตบอล
-  const fields = [
-    {
-      id: 1,
-      name: '98 ARENA Cafe’ (สนามฟุตบอลหญ้าเทียม&คาเฟ่)',
-      type: 'ฟุตบอลหญ้าเทียม 7 คน',
-      location: 'อ.เมือง ขอนแก่น',
-      distance: '1.2 กม.',
-      price: 800,
-      rating: 4.9,
-      image: 'https://lh3.googleusercontent.com/p/AF1QipPSODeBEH_SOanKQWiMK5OSHCw4z_B5IN4vZlOU=s1360-w1360-h1020-rw',
-      status: 'Open'
-    },
-    {
-      id: 2,
-      name: 'KKU Arena',
-      type: 'ฟุตบอลหญ้าเทียม 5 คน',
-      location: 'ใกล้มหาวิทยาลัยขอนแก่น',
-      distance: '0.9 กม.',
-      price: 600,
-      rating: 4.6,
-      image: 'https://images.unsplash.com/photo-1521412644187-c49fa049e84d',
-      status: 'Full'
-    }
-  ];
+type VenueDoc = {
+  id: string;              // เช่น football_1
+  type: 'football' | 'badminton';
+  name: string;
+  zone: string;
+  distance: string;
+  priceRange: string;
+  openTime: string;
+  closeTime?: string;
+  location: string;
+  imageUrl: string;
+  totalCourts?: number;    // แนะนำให้มี (จำนวนสนามย่อย)
+  rating?: number;
+};
+
+const FootballFields: React.FC = () => {
+  const history = useHistory();
+  const [list, setList] = useState<VenueDoc[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+
+        const venuesRef = collection(db, 'venues');
+        const q = query(venuesRef, where('type', '==', 'football'));
+        const snap = await getDocs(q);
+
+        const rows = snap.docs.map(d => ({ ...(d.data() as any), id: d.id })) as VenueDoc[];
+
+        if (mounted) setList(rows);
+      } catch (e) {
+        console.error('load football venues error:', e);
+        if (mounted) setList([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, []);
+
+  const openVenueDetail = (v: VenueDoc) => {
+    history.push({
+      pathname: '/football-venue',
+      state: { venueId: v.id } // ✅ ส่ง docId จริง เช่น football_1
+    });
+  };
 
   return (
     <IonPage>
-
-      {/* Header */}
       <IonHeader className="ion-no-border">
-        <IonToolbar style={{ '--background': '#121212' }}>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/home" />
-          </IonButtons>
-          <IonTitle style={{ color: '#fff', fontWeight: 'bold' }}>
-            เลือกสนามฟุตบอล
-          </IonTitle>
+        <IonToolbar className="lux-toolbar">
+          <IonButtons slot="start"><IonBackButton defaultHref="/home" color="light" /></IonButtons>
+          <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>สนามฟุตบอล</div>
         </IonToolbar>
       </IonHeader>
 
-      <IonContent fullscreen className="ion-padding" style={{ '--background': '#121212' }}>
-
-        {/* Search */}
-        <IonSearchbar
-          placeholder="ค้นหาสนามฟุตบอล..."
-          className="custom-search"
-        />
-
-        {/* รายการสนาม */}
-        {fields.map(field => (
-          <IonCard
-            key={field.id}
-            className="field-card"
-            routerLink={`/football-detail/${field.id}`}   // 🔥 กดแล้วต้องขึ้น
-          >
-
-            <div className="card-img-wrapper">
-              <img src={field.image} alt={field.name} />
-              <IonBadge className="rating-badge">⭐ {field.rating}</IonBadge>
-
-              {field.status === 'Full' && (
-                <IonBadge color="danger" style={{ position: 'absolute', top: 10, left: 10 }}>
-                  เต็มแล้ว
-                </IonBadge>
-              )}
+      <IonContent fullscreen className="lux-page">
+        <div className="lux-container">
+          {loading ? (
+            <div style={{ textAlign: 'center', marginTop: '40%', color: '#666' }}>
+              <p>กำลังโหลดสนาม...</p>
             </div>
-
-            <IonCardHeader>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <IonCardSubtitle style={{ color: '#D4AF37' }}>
-                  FOOTBALL
-                </IonCardSubtitle>
-                <span style={{ color: '#D4AF37', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                  ฿{field.price}
-                </span>
-              </div>
-
-              <IonCardTitle>{field.name}</IonCardTitle>
-              <IonCardSubtitle>{field.type}</IonCardSubtitle>
-            </IonCardHeader>
-
-            <IonCardContent>
-              <div style={{ borderTop: '1px solid #000000ff', paddingTop: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <IonIcon icon={locationOutline} />
-                  {field.location}
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
-                  <IonIcon icon={navigateCircleOutline} />
-                  <span style={{ color: '#ffffffff' }}>
-                    ห่างจากคุณ {field.distance}
-                  </span>
-                </div>
-              </div>
-
-              <IonButton
-                expand="block"
-                style={{
-                  marginTop: 15,
-                  '--background': '#D4AF37',
-                  '--color': '#000000ff',
-                  fontWeight: 'bold'
-                }}
+          ) : list.length === 0 ? (
+            <div style={{ textAlign: 'center', marginTop: '40%', color: '#666' }}>
+              <p>ยังไม่มีสนามฟุตบอลในฐานข้อมูล</p>
+            </div>
+          ) : (
+            list.map((v) => (
+              <IonCard
+                key={v.id}
+                className="lux-card"
+                style={{ marginBottom: '20px', borderRadius: '15px', overflow: 'hidden' }}
               >
-                จองสนามนี้
-              </IonButton>
-            </IonCardContent>
+                <div style={{ height: '200px', position: 'relative' }}>
+                  <img src={v.imageUrl} alt="field" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ position: 'absolute', top: 10, right: 10 }}>
+                    <IonBadge color="warning" style={{ fontSize: '0.8rem', padding: '5px 10px' }}>
+                      <IonIcon icon={star} /> {v.rating ?? 4.7}
+                    </IonBadge>
+                  </div>
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)', padding: '20px 15px 10px' }}>
+                    <h2 style={{ color: 'white', fontWeight: 'bold', margin: 0, fontSize: '1.5rem' }}>{v.name}</h2>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem' }}>
+                      <IonIcon icon={locationOutline} color="warning" /> {v.distance} ({v.zone})
+                    </div>
+                  </div>
+                </div>
 
-          </IonCard>
-        ))}
+                <IonCardContent>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', color: '#ddd' }}>
+                    <div><IonIcon icon={timeOutline} color="success" /> {v.openTime}{v.closeTime ? ` - ${v.closeTime}` : ''}</div>
+                    <div><IonIcon icon={walletOutline} color="warning" /> {v.priceRange} บ./ชม.</div>
+                  </div>
 
+                  <IonButton
+                    expand="block"
+                    color="warning"
+                    onClick={() => openVenueDetail(v)}
+                    style={{ '--color': 'black', fontWeight: 'bold' } as any}
+                  >
+                    ดูรายละเอียด & จอง <IonIcon icon={arrowForward} slot="end" />
+                  </IonButton>
+                </IonCardContent>
+              </IonCard>
+            ))
+          )}
+        </div>
       </IonContent>
     </IonPage>
   );

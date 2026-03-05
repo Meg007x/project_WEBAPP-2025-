@@ -1,0 +1,25 @@
+/* src/App.css */
+ion-tab-bar.custom-tab-bar {
+  --background: #000000;
+  border-top: 1px solid #1A1A1A;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  height: 60px;
+}
+
+ion-tab-button {
+  --color: #777777; 
+  --color-selected: #D90429; /* สีแดงเมื่อเลือก */
+  background: #000000;
+}
+
+ion-tab-button ion-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+ion-tab-button ion-label {
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'Kanit', sans-serif;
+}
