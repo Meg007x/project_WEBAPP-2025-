@@ -11,20 +11,20 @@ import {
   qrCodeOutline, flashOutline
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
-import { seedDatabase } from '../data/seed'; // import มาจากไฟล์ที่เราสร้าง
+import { seedDatabase } from '../data/seed';
 
-// ✅ เพิ่ม: ดึงข้อมูล user จาก Firebase Auth
+// ✅ ดึงข้อมูล user จาก Firebase Auth
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
 const Home: React.FC = () => {
   const history = useHistory();
 
-  // ✅ เพิ่ม: state เก็บ user + ชื่อที่จะแสดง
+  // ✅ state เก็บ user + ชื่อที่จะแสดง
   const [user, setUser] = useState<User | null>(null);
-  const [displayName, setDisplayName] = useState<string>(''); // ชื่อที่จะโชว์บน UI
+  const [displayName, setDisplayName] = useState<string>('');
 
-  // ✅ เพิ่ม: เอาไว้โชว์คำทักทายตามเวลา (optional แต่เข้ากับธีม)
+  // ✅ คำทักทายตามเวลา
   const greetingText = useMemo(() => {
     const h = new Date().getHours();
     if (h < 12) return '👋 สวัสดีตอนเช้า';
@@ -33,9 +33,7 @@ const Home: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // ✅ ฟังสถานะล็อกอินแบบ realtime
     const unsub = onAuthStateChanged(auth, (u) => {
-      // ถ้าไม่ได้ล็อกอิน -> เด้งไปหน้า login
       if (!u) {
         setUser(null);
         setDisplayName('');
@@ -45,10 +43,6 @@ const Home: React.FC = () => {
 
       setUser(u);
 
-      // ✅ ลำดับชื่อที่ใช้แสดง:
-      // 1) displayName (Google / หรือคุณ set ไว้)
-      // 2) email (ตัดก่อน @)
-      // 3) phoneNumber
       const nameFromDisplay = (u.displayName || '').trim();
       const nameFromEmail = (u.email ? u.email.split('@')[0] : '').trim();
       const nameFromPhone = (u.phoneNumber || '').trim();
@@ -61,24 +55,19 @@ const Home: React.FC = () => {
 
   return (
     <IonPage>
-      {/* ❌ เอา IonHeader ออกไปเลย เพื่อให้ข้างบนไม่ Fix */}
-
       <IonContent fullscreen className="lux-page">
-
-        {/* ✅ สร้าง Wrapper ใหญ่สุด ใส่ padding 20px รอบทิศ */}
+        {/* Wrapper */}
         <div style={{ padding: '20px', paddingBottom: '40px' }}>
 
-          {/* --- ส่วนหัว (Header) ย้ายมาอยู่ที่นี่แทน --- */}
+          {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', marginTop: '10px' }}>
             <div>
               <IonText color="medium"><small>{greetingText}</small></IonText>
 
-              {/* ✅ เปลี่ยนจาก hardcode เป็นชื่อผู้ใช้จริง */}
               <h2 className="user-name" style={{ margin: 0, fontSize: '1.8rem' }}>
                 {displayName || '...'}
               </h2>
 
-              {/* ✅ (ไม่บังคับ) ถ้าอยากโชว์อีเมล/เบอร์เล็กๆ ใต้ชื่อ */}
               {user?.email && (
                 <IonText color="medium">
                   <small style={{ opacity: 0.7 }}>{user.email}</small>
@@ -102,11 +91,11 @@ const Home: React.FC = () => {
               placeholder="ค้นหาสนาม, กีฬา..."
               className="custom-search"
               searchIcon={searchOutline}
-              style={{ padding: 0 }} // ล้าง padding เดิมของ searchbar
-            ></IonSearchbar>
+              style={{ padding: 0 }}
+            />
           </div>
 
-          {/* ปุ่ม Wallet */}
+          {/* Wallet */}
           <div style={{ marginBottom: '25px' }}>
             <div
               onClick={() => history.push('/ticket-list')}
@@ -114,8 +103,12 @@ const Home: React.FC = () => {
                 padding: '20px',
                 background: 'linear-gradient(90deg, #FFD700 0%, #b8860b 100%)',
                 borderRadius: '20px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                color: '#000', boxShadow: '0 8px 20px rgba(255, 215, 0, 0.25)', cursor: 'pointer'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                color: '#000',
+                boxShadow: '0 8px 20px rgba(255, 215, 0, 0.25)',
+                cursor: 'pointer'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -135,7 +128,6 @@ const Home: React.FC = () => {
               <h3 style={{ fontSize: '1.5rem' }}>เตะบอลกันมั้ย?</h3>
               <p>จองสนามใกล้ ม. วันนี้<br />รับส่วนลด 10%</p>
 
-              {/* ✅ เปลี่ยนให้พาไปหน้าฟุตบอลจริง */}
               <IonButton
                 size="small"
                 color="light"
@@ -145,7 +137,12 @@ const Home: React.FC = () => {
                 ดูเลย
               </IonButton>
             </div>
-            <img src="https://cdn-icons-png.flaticon.com/512/3214/3214648.png" alt="sport" className="hero-img" style={{ right: '15px' }} />
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/3214/3214648.png"
+              alt="sport"
+              className="hero-img"
+              style={{ right: '15px' }}
+            />
           </div>
 
           {/* Category Grid */}
@@ -161,7 +158,6 @@ const Home: React.FC = () => {
                 </div>
               </IonCol>
               <IonCol size="6" style={{ paddingLeft: '8px' }}>
-                {/* ✅ เปลี่ยนจาก alert('🚧') เป็นไปหน้าฟุตบอล */}
                 <div className="sport-card" onClick={() => history.push('/football-list')} style={{ borderRadius: '20px' }}>
                   <div className="icon-bg">⚽</div>
                   <h4>ฟุตบอล</h4>
@@ -177,9 +173,16 @@ const Home: React.FC = () => {
             <IonButton fill="clear" size="small" color="warning">ดูทั้งหมด</IonButton>
           </div>
 
-          <IonCard className="field-card" onClick={() => history.push('/badminton-venue')} style={{ borderRadius: '24px', margin: 0, width: '100%' }}>
+          <IonCard
+            className="field-card"
+            onClick={() => history.push('/badminton-venue')}
+            style={{ borderRadius: '24px', margin: 0, width: '100%' }}
+          >
             <div className="card-img-wrapper">
-              <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh3xY_ZSFMhPL9kE0poDTYtijzEDCHfJfjmX5Y_36hC790mTXsjh3CE6tRudLCi_a1LCbgzmauRhJv5aAA7kDubm46SJLULYtHtUxL9bcAicbs0_xh4j82WufpFLeGtoXtMxojnVuHq9iyuWVpGlRfCb5oZJcLgQiMUHEW21q3WEC3GHwgXz9OUHAhmyzg/s1360/PS01.jpg" alt="field" />
+              <img
+                src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEh3xY_ZSFMhPL9kE0poDTYtijzEDCHfJfjmX5Y_36hC790mTXsjh3CE6tRudLCi_a1LCbgzmauRhJv5aAA7kDubm46SJLULYtHtUxL9bcAicbs0_xh4j82WufpFLeGtoXtMxojnVuHq9iyuWVpGlRfCb5oZJcLgQiMUHEW21q3WEC3GHwgXz9OUHAhmyzg/s1360/PS01.jpg"
+                alt="field"
+              />
               <IonBadge color="warning" className="rating-badge" style={{ top: '15px', right: '15px' }}>⭐ 4.5</IonBadge>
             </div>
             <IonCardHeader>
@@ -194,7 +197,7 @@ const Home: React.FC = () => {
             </IonCardContent>
           </IonCard>
 
-        </div> {/* จบ Wrapper */}
+        </div>
       </IonContent>
     </IonPage>
   );

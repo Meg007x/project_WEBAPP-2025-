@@ -170,7 +170,7 @@ const Login: React.FC = () => {
             <p style={{ color: "#888", marginTop: 6, marginBottom: 0 }}>เข้าสู่ระบบเพื่อจองสนาม</p>
           </div>
 
-          {/* สำคัญ: div นี้ต้องมีอยู่จริง และต้องไม่ซ้ำ id */}
+          {/* สำคัญ: div นี้ต้องมีอยู่จริง */}
           <div id="recaptcha-container" />
 
           {/* ===== Card: Email & Google ===== */}
@@ -209,11 +209,15 @@ const Login: React.FC = () => {
                 </IonInput>
               </div>
 
-              <IonButton expand="block" color="warning" onClick={handleEmailLogin} style={{ fontWeight: "bold", "--color": "#000" } as any}>
+              <IonButton
+                expand="block"
+                color="warning"
+                onClick={handleEmailLogin}
+                style={{ fontWeight: "bold", "--color": "#000" } as any}
+              >
                 <IonIcon icon={logInOutline} slot="start" /> เข้าสู่ระบบด้วยอีเมล
               </IonButton>
 
-              {/* Google (ทำให้เด่นขึ้น: solid + กรอบทองบางๆ ตามธีม) */}
               <IonButton
                 expand="block"
                 onClick={handleGoogleLogin}
@@ -233,7 +237,7 @@ const Login: React.FC = () => {
             </div>
           </div>
 
-          {/* Divider "หรือ" */}
+          {/* Divider */}
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
             <div style={{ height: 1, flex: 1, background: "#333" }} />
             <div style={{ color: "#aaa", fontSize: 14 }}>หรือ</div>

@@ -6,11 +6,11 @@
 
 .user-name {
   margin: 0;
-  font-weight: 800; /* ตัวหนาพิเศษแบบเสื้อบอล */
+  font-weight: 800;
   font-size: 1.8rem;
   color: #fff;
   letter-spacing: 1px;
-  text-transform: uppercase; /* ตัวพิมพ์ใหญ่ทั้งหมดดูเท่กว่า */
+  text-transform: uppercase;
 }
 
 .header-container {
@@ -23,8 +23,8 @@
 /* ปุ่มแจ้งเตือนแบบ Dark */
 .notify-btn {
   --color: #fff;
-  background: rgba(255, 255, 255, 0.1); /* โปร่งใส */
-  border-radius: 12px; /* เหลี่ยมมนนิดๆ */
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   width: 45px;
   height: 45px;
   border: 1px solid rgba(255,255,255,0.2);
@@ -36,9 +36,9 @@
   right: 12px;
   width: 8px;
   height: 8px;
-  background: #D4AF37; /* เปลี่ยนจุดแดงเป็นจุดทอง */
+  background: #D4AF37;
   border-radius: 50%;
-  box-shadow: 0 0 10px #D4AF37; /* มีแสงฟุ้งๆ */
+  box-shadow: 0 0 10px #D4AF37;
 }
 
 /* Search Bar แบบ Dark Mode */
@@ -53,11 +53,10 @@
   margin-bottom: 20px;
 }
 
-/* --- Hero Banner (จุดเด่น) --- */
+/* --- Hero Banner --- */
 .hero-banner {
-  /* ไล่สี ดำ -> ทองจางๆ แบบเสื้อ Juve Away Kit */
   background: linear-gradient(145deg, #1a1a1a, #332f20);
-  border: 1px solid rgba(212, 175, 55, 0.3); /* ขอบทองบางๆ */
+  border: 1px solid rgba(212, 175, 55, 0.3);
   border-radius: 16px;
   padding: 25px;
   display: flex;
@@ -67,7 +66,6 @@
   overflow: hidden;
 }
 
-/* เอฟเฟกต์แสงสะท้อน */
 .hero-banner::before {
   content: '';
   position: absolute;
@@ -84,7 +82,7 @@
   font-weight: 800;
   font-size: 1.6rem;
   color: #fff;
-  font-style: italic; /* ตัวเอียงสไตล์สปอร์ต */
+  font-style: italic;
 }
 
 .hero-text p {
@@ -92,7 +90,6 @@
   margin-bottom: 15px;
 }
 
-/* ปุ่มดูโปรโมชั่น */
 .hero-text ion-button {
   --background: #D4AF37;
   --color: #000;
@@ -103,14 +100,14 @@
 .hero-img {
   width: 90px;
   height: 90px;
-  filter: drop-shadow(0 0 15px rgba(212,175,55,0.4)); /* เงาทอง */
+  filter: drop-shadow(0 0 15px rgba(212,175,55,0.4));
 }
 
 /* --- หมวดหมู่กีฬา --- */
 .section-title h3, .section-header h3 {
   color: #fff;
   font-weight: 700;
-  border-left: 4px solid #D4AF37; /* ขีดทองหน้าหัวข้อ */
+  border-left: 4px solid #D4AF37;
   padding-left: 10px;
 }
 
@@ -127,7 +124,6 @@
   transition: all 0.3s ease;
 }
 
-/* ทำให้การ์ดเรืองแสงเมื่อกด */
 .sport-card:active {
   background: #252525;
   border-color: #D4AF37;
@@ -135,12 +131,9 @@
 
 .icon-bg {
   font-size: 2.5rem;
-  background: linear-gradient(to bottom, #D4AF37, #8a7018); /* ไอคอนสีทองไล่เฉด */
-
-  /* ✅ แก้ warning: เพิ่ม property มาตรฐาน */
+  background: linear-gradient(to bottom, #D4AF37, #8a7018);
   background-clip: text;
   -webkit-background-clip: text;
-
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
@@ -151,19 +144,18 @@
   margin-top: 10px;
 }
 
-/* --- Field Card (การ์ดสนาม) --- */
+/* --- Field Card --- */
 .field-card {
   background: #1e1e1e;
   margin: 0 0 25px 0;
   border-radius: 12px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.5); /* เงาเข้มๆ */
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
 
 .card-img-wrapper {
   height: 160px;
 }
 
-/* ป้าย Rating สีดำทอง */
 .rating-badge {
   background: #000 !important;
   color: #D4AF37 !important;
@@ -184,99 +176,26 @@
 }
 
 .field-info {
-  border-top: 1px solid #333; /* เส้นคั่นบางๆ */
+  border-top: 1px solid #333;
   padding-top: 10px;
   margin-top: 5px;
   color: #ccc;
 }
 
 .field-info .price {
-  color: #D4AF37; /* ราคาสีทอง */
+  color: #D4AF37;
   font-size: 1.2rem;
   text-shadow: 0 0 10px rgba(212,175,55,0.3);
 }
 
 /* --- Dark Luxury Theme Basics --- */
 .bg-dark {
-  --background: #000000;
-  color: #f0f0f0;
+  --background: #0d0d0d;
+  color: white;
 }
 
 .text-gold {
   color: #FFD700;
-}
-
-/* --- Court Grid 8 (Multi-Select) --- */
-.court-grid-8 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2 คอลัมน์ */
-  gap: 15px;
-  padding: 10px;
-}
-
-.court-box {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 8px;
-  height: 100px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  transition: all 0.2s;
-}
-
-/* เส้นสนามแบดจำลอง */
-.court-lines-graphic {
-  width: 60%;
-  height: 70%;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  position: absolute;
-}
-.court-lines-graphic::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 100%;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.1);
-}
-
-/* สถานะการเลือก */
-.court-box.selected {
-  background: #FFD700;
-  border-color: #FFD700;
-  transform: scale(1.02);
-}
-.court-box.selected .court-lines-graphic { border-color: rgba(0,0,0,0.3); }
-.court-box.selected .court-lines-graphic::after { background: rgba(0,0,0,0.3); }
-.court-box.selected h3 { color: black; font-weight: 800; }
-
-.court-box.occupied {
-  background: #111;
-  opacity: 0.4;
-  pointer-events: none; /* กดไม่ได้ */
-}
-
-/* --- Party List UI (RPG Style) --- */
-.party-member-item {
-  --background: #111;
-  --border-color: #333;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 1px solid #333;
-}
-
-.avatar-rpg {
-  background: linear-gradient(45deg, #333, #555);
-  border: 2px solid #FFD700;
-}
-
-/* พื้นหลังสีดำสำหรับหน้าใหม่ */
-.bg-dark {
-  --background: #0d0d0d; /* ดำเกือบสนิท */
-  color: white;
 }
 
 /* ปุ่มเลือกวัน/เวลาของ Ionic */
@@ -293,22 +212,18 @@ ion-modal {
   --ion-text-color: #fff;
 }
 
-/* --- ธีมดำทอง Dark Luxury (แก้ไขใหม่) --- */
-
-/* พื้นหลังหลัก ดำสนิท */
+/* --- ธีมดำทอง Dark Luxury --- */
 .lux-page {
   --background: #000000;
   background-color: #000000;
 }
 
-/* Toolbar (หัวข้อ) ดำสนิท */
 .lux-toolbar {
   --background: #000000;
   --color: #ffffff;
   --border-color: #222;
 }
 
-/* การ์ดและกล่องต่างๆ (เทาเข้มเกือบดำ) */
 .lux-card {
   background-color: #111111;
   border: 1px solid #333;
@@ -316,17 +231,24 @@ ion-modal {
   border-radius: 12px;
 }
 
-/* ช่อง Input / Select */
 .lux-input {
   --background: #1a1a1a;
-  --color: #FFD700; /* สีทอง */
+  --color: #FFD700;
   --placeholder-color: #666;
   border-radius: 8px;
   border: 1px solid #333;
   margin-top: 5px;
 }
 
-/* Grid สนามแบด (8 คอร์ด) */
+/* ✅ container สำหรับทุกหน้า */
+.lux-container {
+  padding: 20px;
+  padding-bottom: 80px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* --- Court Grid (Multi-Select) --- */
 .court-grid-8 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -335,7 +257,7 @@ ion-modal {
 }
 
 .court-box {
-  background-color: #1a1a1a; /* พื้นหลังคอร์ด */
+  background-color: #1a1a1a;
   border: 1px solid #444;
   border-radius: 8px;
   height: 100px;
@@ -347,13 +269,13 @@ ion-modal {
   transition: all 0.2s;
 }
 
-/* เส้นสนามจำลอง (สีขาวจางๆ) */
 .court-lines {
   position: absolute;
   width: 60%;
   height: 70%;
   border: 1px solid rgba(255,255,255,0.15);
 }
+
 .court-lines::after {
   content: '';
   position: absolute;
@@ -363,19 +285,34 @@ ion-modal {
   background: rgba(255,255,255,0.15);
 }
 
-/* เมื่อเลือกสนาม (สีทอง) */
 .court-box.selected {
   background-color: #FFD700;
   border-color: #FFD700;
   transform: scale(1.02);
 }
-.court-box.selected h3 { color: #000; font-weight: 900; }
-.court-box.selected .court-lines { border-color: rgba(0,0,0,0.3); }
-.court-box.selected .court-lines::after { background: rgba(0,0,0,0.3); }
 
-/* Party Member Item (List) */
+.court-box.selected h3 {
+  color: #000;
+  font-weight: 900;
+}
+
+.court-box.selected .court-lines {
+  border-color: rgba(0,0,0,0.3);
+}
+
+.court-box.selected .court-lines::after {
+  background: rgba(0,0,0,0.3);
+}
+
+.court-box.occupied {
+  background: #111;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* --- Party List --- */
 .party-item {
-  --background: #111; /* พื้นหลัง List */
+  --background: #111;
   --color: #fff;
   border: 1px solid #333;
   margin-bottom: 8px;
@@ -386,7 +323,7 @@ ion-modal {
 .ticket-container {
   width: 100%;
   max-width: 320px;
-  background: #FFD700; /* สีทองเป็นพื้นหลักของตั๋ว */
+  background: #FFD700;
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
@@ -417,7 +354,7 @@ ion-modal {
   position: absolute;
   width: 24px;
   height: 24px;
-  background: #000; /* สีต้องตรงกับพื้นหลังหน้าจอ */
+  background: #000;
   border-radius: 50%;
 }
 
@@ -426,7 +363,7 @@ ion-modal {
 
 .ticket-bottom {
   padding: 25px;
-  background: #fdfdfd; /* สีขาวนวลตัดกับสีทองด้านบน */
+  background: #fdfdfd;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -450,16 +387,16 @@ ion-modal {
   border-bottom: 2px dashed #000;
 }
 
-/* รอยปรุด้านข้าง */
 .ticket-header::after, .ticket-header::before {
   content: '';
   position: absolute;
   bottom: -10px;
   width: 20px;
   height: 20px;
-  background: #000; /* สีพื้นหลังหน้าจอ */
+  background: #000;
   border-radius: 50%;
 }
+
 .ticket-header::before { left: -10px; }
 .ticket-header::after { right: -10px; }
 
@@ -482,15 +419,7 @@ ion-modal {
   color: #000;
 }
 
-/* ✅ เพิ่มตัวนี้ครับ: ทำให้เนื้อหาทุกหน้ามีช่องไฟ หายใจสะดวก */
-.lux-container {
-  padding: 20px;
-  padding-bottom: 80px; /* เผื่อที่ด้านล่างให้ปุ่มไม่บังเนื้อหา */
-  max-width: 600px;     /* ถ้าเปิดในไอแพด เนื้อหาจะไม่บานเกินไป */
-  margin: 0 auto;       /* จัดกึ่งกลาง */
-}
-
-/* ทำให้ข้อความ IonAlert รองรับขึ้นบรรทัดใหม่จาก \n */
+/* ✅ ทำให้ข้อความ IonAlert รองรับขึ้นบรรทัดใหม่จาก \n */
 .lux-alert-preline .alert-message {
   white-space: pre-line;
 }

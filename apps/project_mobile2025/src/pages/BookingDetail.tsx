@@ -105,12 +105,10 @@ const BookingDetail: React.FC = () => {
   };
 
   // slot step (นาที) — ถ้าระบบคุณเป็นรายชั่วโมง ใช้ 60 ได้
-  // แนะนำ 30 จะกันเคสครึ่งชั่วโมงได้ด้วย
   const SLOT_STEP_MIN = 60;
 
   const buildSlotKeys = (startMin: number, endMin: number) => {
     const slots: number[] = [];
-    // slot เป็น index ตาม step เช่น 17:00 => 34 ถ้า step=30 (เพราะ 17*60/30 = 34)
     for (let m = startMin; m < endMin; m += SLOT_STEP_MIN) {
       slots.push(Math.floor(m / SLOT_STEP_MIN));
     }
@@ -118,7 +116,6 @@ const BookingDetail: React.FC = () => {
   };
 
   const makeReservationDocId = (venueId: string, dKey: string, courtId: number, slot: number) => {
-    // doc id ต้อง deterministic เพื่อ "ชนกัน" ได้จริง
     return `${venueId}_${dKey}_court${courtId}_slot${slot}`;
   };
   // -------------------------------------------
@@ -223,7 +220,7 @@ const BookingDetail: React.FC = () => {
         }
       });
 
-      // ✅ สำเร็จ -> ไปหน้าตั๋ว (ส่ง state เหมือนเดิม)
+      // ✅ สำเร็จ -> ไปหน้าตั๋ว
       history.push({
         pathname: '/booking-ticket',
         state: { ...ticketPayload, id: bookingRef.id, isJustBooked: true }
@@ -232,7 +229,6 @@ const BookingDetail: React.FC = () => {
     } catch (e: any) {
       const msg = String(e?.message || '');
 
-      // ถ้าเป็น error ที่เราโยนเอง จะขึ้นต้นด้วย CONFLICT|
       if (msg.startsWith('CONFLICT|')) {
         const text = msg.replace('CONFLICT|', '');
         setConflictMessage(text);
@@ -291,7 +287,7 @@ const BookingDetail: React.FC = () => {
                 <span style={{ color: 'white', fontWeight: 'bold' }}>{bookingData.startTime} - {bookingData.endTime}</span>
               </div>
               <div>
-                <span style={{ color: '#888' }}>{isFootball ? 'สนาม:' : 'สนาม:'}</span> <br />
+                <span style={{ color: '#888' }}>สนาม:</span> <br />
                 <span style={{ color: 'white', fontWeight: 'bold' }}>
                   {isFootball ? `Field ${courtIds.join(', ')}` : `เบอร์ ${courtIds.join(', ')}`}
                 </span>
@@ -359,20 +355,18 @@ const BookingDetail: React.FC = () => {
                     </p>
                   </IonLabel>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    {!isFootball && (
-                      <div style={{ display: 'flex', alignItems: 'center', color: '#aaa', fontSize: '0.8rem' }}>
-                        <IonIcon icon={shirtOutline} style={{ marginRight: 5 }} />
-                        <span style={{ marginRight: 5 }}>รองเท้า (+20฿)</span>
-                        <IonCheckbox
-                          checked={m.hasShoes}
-                          onIonChange={() => toggleShoes(m.id)}
-                          color="warning"
-                          style={{ '--size': '18px', '--checkbox-background': '#333' } as any}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  {!isFootball && (
+                    <div style={{ display: 'flex', alignItems: 'center', color: '#aaa', fontSize: '0.8rem' }}>
+                      <IonIcon icon={shirtOutline} style={{ marginRight: 5 }} />
+                      <span style={{ marginRight: 5 }}>รองเท้า (+20฿)</span>
+                      <IonCheckbox
+                        checked={m.hasShoes}
+                        onIonChange={() => toggleShoes(m.id)}
+                        color="warning"
+                        style={{ '--size': '18px', '--checkbox-background': '#333' } as any}
+                      />
+                    </div>
+                  )}
                 </IonItem>
               );
             })}
@@ -381,7 +375,6 @@ const BookingDetail: React.FC = () => {
           <div style={{ height: '50px' }}></div>
         </div>
 
-        {/* ✅ แก้เฉพาะป็อปอัพ: ไม่ใช้ <br/> แล้วใช้ CSS ให้ขึ้นบรรทัดใหม่ */}
         <IonAlert
           isOpen={showConflictAlert}
           onDidDismiss={() => setShowConflictAlert(false)}

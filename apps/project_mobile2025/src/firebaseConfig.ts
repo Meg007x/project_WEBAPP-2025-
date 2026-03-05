@@ -11,16 +11,19 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+
+  // ✅ ใส่ measurementId เฉพาะตอนมีใน .env (ไม่มีก็ไม่เป็นไร)
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 const app = initializeApp(firebaseConfig);
 
-// ✅ Analytics บางทีใช้ไม่ได้บน localhost / dev environment
-isSupported()
-  .then((yes) => {
-    if (yes) getAnalytics(app);
-  })
-  .catch(() => {});
-
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// ✅ Analytics: บาง environment (localhost) ไม่รองรับ
+isSupported()
+  .then((yes) => {
+    if (yes && firebaseConfig.measurementId) getAnalytics(app);
+  })
+  .catch(() => {});

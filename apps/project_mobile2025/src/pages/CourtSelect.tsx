@@ -21,7 +21,12 @@ const CourtSelect: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString());
 
   // venue จากหน้า BadmintonVenue
-  const [venue, setVenue] = useState<any>({ id: 1, name: 'PS Badminton', totalCourts: 4, priceRange: '120 - 180' });
+  const [venue, setVenue] = useState<any>({
+    id: 1,
+    name: 'PS Badminton',
+    totalCourts: 8,
+    priceRange: '120 - 180'
+  });
 
   useIonViewWillEnter(() => {
     if (location.state?.venue) setVenue(location.state.venue);
@@ -38,9 +43,14 @@ const CourtSelect: React.FC = () => {
     }
   }, [startTime]); // eslint-disable-line
 
+  // ✅ จำนวนคอร์ด: ใช้ venue.totalCourts ก่อน, ถ้าไม่มีค่อยเดาจากชื่อ (PCR=6, อื่น=8)
   const totalCourts = useMemo(() => {
     const n = Number(venue?.totalCourts);
-    return Number.isFinite(n) && n > 0 ? n : 8; // ถ้าไม่มีค่า ให้ fallback 8
+    if (Number.isFinite(n) && n > 0) return n;
+
+    const nameUpper = String(venue?.name || '').toUpperCase();
+    const isPCR = nameUpper.includes('PCR') || nameUpper.includes('PRC');
+    return isPCR ? 6 : 8;
   }, [venue]);
 
   const courts = useMemo(() => {

@@ -1,12 +1,23 @@
 // src/pages/TicketList.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  IonContent, IonHeader, IonPage, IonToolbar, IonButtons, IonBackButton,
-  IonIcon, IonAlert
+  IonContent,
+  IonHeader,
+  IonPage,
+  IonToolbar,
+  IonButtons,
+  IonBackButton,
+  IonIcon,
+  IonAlert,
+  IonButton,
+  IonText,
 } from '@ionic/react';
 import {
-  timeOutline, trashOutline, footballOutline,
-  locationOutline, calendarOutline
+  timeOutline,
+  trashOutline,
+  footballOutline,
+  locationOutline,
+  calendarOutline,
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import './Home.css';
@@ -25,9 +36,34 @@ import {
   Query,
   DocumentData,
   getDocs,
-  limit
+  limit,
 } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
+
+type TicketDoc = {
+  docId: string;
+  id?: string;
+  userId?: string;
+  userEmail?: string | null;
+
+  venue?: any;
+  venueName?: string;
+  partyName?: string;
+
+  date?: string;
+  dateKey?: string;
+
+  startTime?: string;
+  endTime?: string;
+  startMin?: number;
+  endMin?: number;
+
+  courtIds?: number[];
+  totalPrice?: number;
+
+  createdAt?: any;
+  reservationIds?: string[];
+};
 
 const TicketList: React.FC = () => {
   const history = useHistory();
@@ -35,13 +71,13 @@ const TicketList: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<TicketDoc[]>([]);
   const [loadingTickets, setLoadingTickets] = useState(true);
 
   const [showAlert, setShowAlert] = useState(false);
   const [ticketToDelete, setTicketToDelete] = useState<{ docId: string; reservationIds?: string[] } | null>(null);
 
-  // ✅ DEBUG STATE (ไว้โชว์บนหน้าจอด้วย)
+  // ✅ DEBUG PANEL (เปิดด้วย ?debug=1)
   const [dbg, setDbg] = useState({
     enabled: false,
     uid: '',
@@ -55,16 +91,14 @@ const TicketList: React.FC = () => {
     ranProbe: false,
     probeSize: -1,
     probeError: '',
-    time: ''
+    time: '',
   });
 
-  // เปิด debug แบบง่าย: เติม ?debug=1 ที่ท้าย URL เช่น /ticket-list?debug=1
   useEffect(() => {
     const enabled = new URLSearchParams(window.location.search).get('debug') === '1';
     setDbg(d => ({ ...d, enabled }));
   }, []);
 
-  // helper: createdAt อาจเป็น Timestamp/undefined
   const toMillis = (v: any) => {
     if (!v) return 0;
     if (v instanceof Timestamp) return v.toMillis();
@@ -79,7 +113,7 @@ const TicketList: React.FC = () => {
     const stop = onAuthStateChanged(auth, (u) => {
       setAuthReady(true);
 
-      // cleanup listener เก่า (ตอนสลับ user / logout)
+      // cleanup listener เก่า
       if (unsubBookings) {
         unsubBookings();
         unsubBookings = null;
@@ -99,7 +133,7 @@ const TicketList: React.FC = () => {
           lastErrorMsg: '',
           sampleUserId: '',
           sampleDocId: '',
-          time: new Date().toLocaleTimeString()
+          time: new Date().toLocaleTimeString(),
         }));
         history.replace('/login');
         return;
@@ -116,22 +150,17 @@ const TicketList: React.FC = () => {
         lastErrorMsg: '',
         sampleUserId: '',
         sampleDocId: '',
-        time: new Date().toLocaleTimeString()
+        time: new Date().toLocaleTimeString(),
       }));
 
-      console.log('[TicketList] AUTH -> uid=', u.uid, 'email=', u.email);
-
-      // ✅ IMPORTANT: เอกสารคุณอยู่ใน collection "bookings"
       const bookingsRef = collection(db, 'bookings');
 
-      // ตัวเลือก A (อยากได้ newest first)
       const qWithOrder: Query<DocumentData> = query(
         bookingsRef,
         where('userId', '==', u.uid),
         orderBy('createdAt', 'desc')
       );
 
-      // ตัวเลือก B (fallback ถ้าโดน index)
       const qNoOrder: Query<DocumentData> = query(
         bookingsRef,
         where('userId', '==', u.uid)
@@ -139,20 +168,15 @@ const TicketList: React.FC = () => {
 
       const subscribe = (qObj: Query<DocumentData>, mode: 'ORDER' | 'NO_ORDER') => {
         setDbg(d => ({ ...d, mode, time: new Date().toLocaleTimeString() }));
-        console.log('[TicketList] SUBSCRIBE mode=', mode);
 
         return onSnapshot(
           qObj,
           (snap) => {
-            const list = snap.docs.map((d) => {
-              const data = d.data();
+            const list: TicketDoc[] = snap.docs.map((d) => {
+              const data = d.data() as any;
               return { docId: d.id, ...data };
             });
 
-            // ✅ DEBUG: ดูผล snapshot
-            console.log('[TicketList] SNAP', mode, 'size=', snap.size, 'docs=', list);
-
-            // ถ้ามี doc แรก: โชว์ userId ใน doc เทียบกับ uid ที่ล็อกอิน
             const first = list[0] as any;
             setDbg(d => ({
               ...d,
@@ -161,10 +185,9 @@ const TicketList: React.FC = () => {
               sampleUserId: first?.userId ?? '',
               lastErrorCode: '',
               lastErrorMsg: '',
-              time: new Date().toLocaleTimeString()
+              time: new Date().toLocaleTimeString(),
             }));
 
-            // ถ้าเป็น NO_ORDER ให้ sort ในเครื่องแทน
             if (mode === 'NO_ORDER') {
               list.sort((a: any, b: any) => toMillis(b.createdAt) - toMillis(a.createdAt));
             }
@@ -173,21 +196,18 @@ const TicketList: React.FC = () => {
             setLoadingTickets(false);
           },
           async (err: any) => {
-            console.error('[TicketList] onSnapshot error:', err?.code, err?.message);
-
             setDbg(d => ({
               ...d,
               lastErrorCode: String(err?.code ?? ''),
               lastErrorMsg: String(err?.message ?? ''),
-              time: new Date().toLocaleTimeString()
+              time: new Date().toLocaleTimeString(),
             }));
 
-            // ถ้า error เพราะไม่มี index -> fallback ไป query แบบไม่ orderBy
+            // missing index -> fallback
             if (
               mode === 'ORDER' &&
               (err?.code === 'failed-precondition' || String(err?.message || '').toLowerCase().includes('index'))
             ) {
-              console.warn('[TicketList] Missing index -> fallback to NO_ORDER');
               if (unsubBookings) {
                 unsubBookings();
                 unsubBookings = null;
@@ -196,27 +216,24 @@ const TicketList: React.FC = () => {
               return;
             }
 
-            // ✅ EXTRA DEBUG: ลอง probe getDocs แบบ where เดียว (กัน snapshot แปลก)
+            // probe getDocs
             try {
               const probeQ = query(bookingsRef, where('userId', '==', u.uid), limit(5));
               const probeSnap = await getDocs(probeQ);
-              console.log('[TicketList] PROBE getDocs size=', probeSnap.size, probeSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-
               setDbg(d => ({
                 ...d,
                 ranProbe: true,
                 probeSize: probeSnap.size,
                 probeError: '',
-                time: new Date().toLocaleTimeString()
+                time: new Date().toLocaleTimeString(),
               }));
             } catch (pe: any) {
-              console.error('[TicketList] PROBE getDocs error:', pe?.code, pe?.message);
               setDbg(d => ({
                 ...d,
                 ranProbe: true,
                 probeSize: -1,
                 probeError: `${pe?.code ?? ''} ${pe?.message ?? ''}`.trim(),
-                time: new Date().toLocaleTimeString()
+                time: new Date().toLocaleTimeString(),
               }));
             }
 
@@ -226,7 +243,6 @@ const TicketList: React.FC = () => {
         );
       };
 
-      // เริ่มจาก ORDER ก่อน
       unsubBookings = subscribe(qWithOrder, 'ORDER');
     });
 
@@ -236,21 +252,21 @@ const TicketList: React.FC = () => {
     };
   }, [history]);
 
-  const getSportType = (venueName: string = "") => {
+  const getSportType = (venueName: string = '') => {
     const lowerName = venueName.toLowerCase();
     const isFootball = [
       'soccer', 'football', 'field', 'arena', 'kick', 'stadium',
-      'ฟุตบอล', 'บอล', 'หญ้าเทียม'
-    ].some(keyword => lowerName.includes(keyword));
+      'ฟุตบอล', 'บอล', 'หญ้าเทียม',
+    ].some(k => lowerName.includes(k));
 
     if (isFootball) return { type: 'Football', icon: footballOutline, color: '#2dd36f' };
     return { type: 'Badminton', icon: undefined, color: '#FFD700' };
   };
 
-  const openTicket = (t: any) => {
+  const openTicket = (t: TicketDoc) => {
     history.push({
       pathname: '/booking-ticket',
-      state: { ...t, isJustBooked: false }
+      state: { ...t, isJustBooked: false },
     });
   };
 
@@ -260,10 +276,10 @@ const TicketList: React.FC = () => {
     try {
       const batch = writeBatch(db);
 
-      // 1) ลบ booking
+      // 1) delete booking
       batch.delete(doc(db, 'bookings', ticketToDelete.docId));
 
-      // 2) ลบ reservation slots (ปลดล็อกเวลา)
+      // 2) delete reservations
       const reservationIds = ticketToDelete.reservationIds || [];
       for (const rid of reservationIds) {
         batch.delete(doc(db, 'court_reservations', rid));
@@ -288,15 +304,19 @@ const TicketList: React.FC = () => {
     <IonPage>
       <IonHeader className="ion-no-border">
         <IonToolbar className="lux-toolbar">
-          <IonButtons slot="start"><IonBackButton defaultHref="/home" color="light" /></IonButtons>
-          <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>ตั๋วของฉัน</div>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/home" color="light" />
+          </IonButtons>
+          <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>
+            ตั๋วของฉัน (Wallet)
+          </div>
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen className="lux-page">
         <div className="lux-container">
 
-          {/* ✅ DEBUG PANEL (เปิดด้วย ?debug=1) */}
+          {/* ✅ DEBUG PANEL */}
           {dbg.enabled && (
             <div style={{
               border: '1px solid #444',
@@ -305,7 +325,7 @@ const TicketList: React.FC = () => {
               marginBottom: 12,
               background: '#111',
               color: '#ddd',
-              fontSize: 12
+              fontSize: 12,
             }}>
               <div style={{ fontWeight: 800, marginBottom: 6 }}>DEBUG TicketList</div>
               <div>time: {dbg.time}</div>
@@ -329,75 +349,128 @@ const TicketList: React.FC = () => {
             <div style={{ textAlign: 'center', marginTop: '50%', color: '#666' }}>
               <IonIcon icon={calendarOutline} style={{ fontSize: '4rem', opacity: 0.5 }} />
               <p>{loadingTickets ? 'กำลังโหลดตั๋ว...' : 'ยังไม่มีประวัติการจอง'}</p>
+
+              {/* เผื่อกรณี auth ยังไม่มา */}
+              {!loadingTickets && !user && (
+                <IonButton
+                  color="warning"
+                  style={{ marginTop: 12, '--color': '#000' } as any}
+                  onClick={() => history.replace('/login')}
+                >
+                  ไปหน้าเข้าสู่ระบบ
+                </IonButton>
+              )}
             </div>
           ) : (
             tickets.map((t) => {
-              const venueName = t.venue?.name || t.venueName || "Unknown Venue";
+              const venueName = (t as any).venue?.name || t.venueName || 'Unknown Venue';
               const sport = getSportType(venueName);
 
-              const d = new Date(t.date);
+              const d = new Date(t.date || new Date().toISOString());
               const day = d.getDate();
               const mon = d.toLocaleString('en-US', { month: 'short' });
 
               return (
                 <div
-                  key={t.docId || t.id}
+                  key={t.docId}
                   style={{ marginBottom: '20px', position: 'relative' }}
                   onClick={() => openTicket(t)}
                 >
+                  {/* แถบวันที่ */}
                   <div style={{
-                    position: 'absolute', left: 0, top: 0, bottom: 0, width: '80px',
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: '80px',
                     background: sport.color,
                     borderRadius: '20px 0 0 20px',
-                    display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-                    color: '#000', fontWeight: 'bold', zIndex: 1
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    zIndex: 1,
                   }}>
                     <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>{day}</span>
                     <span style={{ fontSize: '0.8rem', textTransform: 'uppercase' }}>{mon}</span>
                     {sport.icon
                       ? <IonIcon icon={sport.icon} style={{ marginTop: 10, fontSize: '1.5rem' }} />
-                      : <span style={{ marginTop: 5, fontSize: '1.2rem' }}>🏸</span>
+                      : <span style={{ marginTop: 6, fontSize: '1.2rem' }}>🏸</span>
                     }
                   </div>
 
+                  {/* เนื้อหา */}
                   <div style={{
-                    marginLeft: '70px', background: '#1a1a1a', padding: '20px 20px 20px 25px',
-                    borderRadius: '0 20px 20px 0', minHeight: '120px',
-                    border: '1px solid #333', borderLeft: 'none',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    cursor: 'pointer'
+                    marginLeft: '70px',
+                    background: '#1a1a1a',
+                    padding: '20px 20px 20px 25px',
+                    borderRadius: '0 20px 20px 0',
+                    minHeight: '120px',
+                    border: '1px solid #333',
+                    borderLeft: 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
                   }}>
                     <div style={{ width: '100%' }}>
-                      <div style={{ color: '#888', fontSize: '0.8rem', display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                      <div style={{
+                        color: '#888',
+                        fontSize: '0.8rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginBottom: 4,
+                      }}>
                         <IonIcon icon={locationOutline} style={{ marginRight: 4, color: sport.color }} />
                         {venueName}
                       </div>
 
-                      <h2 style={{ margin: '0 0 8px 0', color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>
-                        {t.partyName || "My Booking"}
+                      <h2 style={{
+                        margin: '0 0 8px 0',
+                        color: '#fff',
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                      }}>
+                        {t.partyName || 'My Booking'}
                       </h2>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ background: '#333', padding: '4px 8px', borderRadius: 6, color: '#ccc', fontSize: '0.85rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{
+                          background: '#333',
+                          padding: '4px 8px',
+                          borderRadius: 6,
+                          color: '#ccc',
+                          fontSize: '0.85rem',
+                        }}>
                           <IonIcon icon={timeOutline} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                           {t.startTime} - {t.endTime}
                         </div>
 
-                        {t.courtIds && (
+                        {Array.isArray(t.courtIds) && (
                           <div style={{ color: '#666', fontSize: '0.85rem' }}>
                             {t.courtIds.length} {sport.type === 'Football' ? 'สนาม' : 'คอร์ด'}
                           </div>
                         )}
+
+                        {typeof t.totalPrice === 'number' && (
+                          <IonText color="medium">
+                            <small style={{ color: '#FFD700' }}>฿{t.totalPrice}</small>
+                          </IonText>
+                        )}
                       </div>
                     </div>
 
+                    {/* ปุ่มลบ */}
                     <div
                       onClick={(e) => {
                         e.stopPropagation();
                         setTicketToDelete({ docId: t.docId, reservationIds: t.reservationIds || [] });
                         setShowAlert(true);
                       }}
-                      style={{ padding: '10px', color: '#ff4961', opacity: 0.8 }}
+                      style={{ padding: '10px', color: '#ff4961', opacity: 0.9 }}
+                      title="ลบตั๋ว"
                     >
                       <IonIcon icon={trashOutline} />
                     </div>
@@ -408,14 +481,15 @@ const TicketList: React.FC = () => {
           )}
         </div>
 
+        {/* Alert ยืนยันการลบ */}
         <IonAlert
           isOpen={showAlert}
           onDidDismiss={() => setShowAlert(false)}
           header="ยืนยันการลบ"
           message="ต้องการลบตั๋วใบนี้ใช่หรือไม่?"
           buttons={[
-            'ยกเลิก',
-            { text: 'ลบ', handler: () => { void confirmDelete(); } }
+            { text: 'ยกเลิก', role: 'cancel' },
+            { text: 'ลบ', handler: () => { void confirmDelete(); } },
           ]}
         />
       </IonContent>
