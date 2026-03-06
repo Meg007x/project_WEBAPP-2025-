@@ -1,18 +1,19 @@
+// src/pages/Home.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   IonContent, IonPage, IonSearchbar, IonGrid, IonRow, IonCol, IonCard, 
   IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonIcon,
-  IonText, IonButton, IonBadge, IonToast
+  IonText, IonButton, IonBadge, IonToast, useIonViewWillEnter // ⭐️ เพิ่มตัวนี้เข้ามา
 } from '@ionic/react';
 import {
   locationOutline, searchOutline, notificationsOutline,
-  qrCodeOutline, flashOutline, cloudUploadOutline
+  qrCodeOutline, flashOutline, cloudUploadOutline, personCircleOutline
 } from 'ionicons/icons';
 import { useHistory } from 'react-router-dom';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, getDocs, query, limit } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
-import { seedDatabase } from '../data/seed'; // ✅ แก้ไข Path ตามที่คุณบอกแล้ว
+import { seedDatabase } from '../data/seed'; 
 import './Home.css';
 
 const Home: React.FC = () => {
@@ -29,7 +30,6 @@ const Home: React.FC = () => {
     return '👋 สวัสดีตอนเย็น';
   }, []);
 
-  // ฟังก์ชันดึงข้อมูลจาก Firestore
   const fetchVenues = async () => {
     try {
       const q = query(collection(db, 'venues'), limit(5));
@@ -40,6 +40,14 @@ const Home: React.FC = () => {
       console.error("Error fetching venues:", err);
     }
   };
+
+  // ⭐️ หมัดเด็ด: บังคับให้อัปเดตชื่อใหม่ทุกครั้งที่กลับมาหน้า Home
+  useIonViewWillEnter(() => {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      setDisplayName(currentUser.displayName || currentUser.email?.split('@')[0] || 'User');
+    }
+  });
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -78,11 +86,14 @@ const Home: React.FC = () => {
               </h2>
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
-              <div onClick={handleSeedData} style={{ background: '#1a1a1a', padding: '10px', borderRadius: '50%', border: '1px solid #333' }}>
+              <div onClick={handleSeedData} style={{ background: '#1a1a1a', padding: '10px', borderRadius: '50%', border: '1px solid #333', cursor: 'pointer' }}>
                 <IonIcon icon={cloudUploadOutline} color="success" />
               </div>
-              <div style={{ background: '#1a1a1a', padding: '10px', borderRadius: '50%', border: '1px solid #333' }}>
+              <div style={{ background: '#1a1a1a', padding: '10px', borderRadius: '50%', border: '1px solid #333', cursor: 'pointer' }}>
                 <IonIcon icon={notificationsOutline} color="warning" />
+              </div>
+              <div onClick={() => history.push('/profile')} style={{ background: '#1a1a1a', padding: '10px', borderRadius: '50%', border: '1px solid #FFD700', cursor: 'pointer' }}>
+                <IonIcon icon={personCircleOutline} color="warning" />
               </div>
             </div>
           </div>
@@ -92,8 +103,8 @@ const Home: React.FC = () => {
             <IonSearchbar placeholder="ค้นหาสนาม, กีฬา..." className="custom-search" searchIcon={searchOutline} disabled />
           </div>
 
-          {/* Wallet */}
-          <div style={{ marginBottom: '25px' }} onClick={() => history.push('/ticket-list')}>
+          {/* Wallet - ⭐️ เปลี่ยนกลับให้ไปที่ /ticket-list */}
+          <div style={{ marginBottom: '25px', cursor: 'pointer' }} onClick={() => history.push('/ticket-list')}>
             <div style={{
               padding: '20px', background: 'linear-gradient(90deg, #FFD700 0%, #b8860b 100%)',
               borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#000',
@@ -103,14 +114,14 @@ const Home: React.FC = () => {
                 <IonIcon icon={qrCodeOutline} style={{ fontSize: '2.2rem' }} />
                 <div>
                   <h4 style={{ margin: 0, fontWeight: '900' }}>ตั๋วของฉัน (Wallet)</h4>
-                  <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>ดูประวัติการจองทั้งหมด</p>
+                  <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.8 }}>สแกนคิวอาร์โค้ดเข้าสนาม</p>
                 </div>
               </div>
               <IonIcon icon={flashOutline} style={{ fontSize: '1.4rem' }} />
             </div>
           </div>
 
-          {/* ✅ Hero Banner "เตะบอลกันมั้ย?" (นำกลับมาใส่แล้ว) */}
+          {/* Hero Banner */}
           <div className="hero-banner" style={{ borderRadius: '20px', marginBottom: '25px', position: 'relative', overflow: 'hidden' }}>
             <div className="hero-text" style={{ padding: '24px', position: 'relative', zIndex: 2 }}>
               <h3 style={{ fontSize: '1.5rem', color: 'white', fontWeight: 'bold' }}>เตะบอลกันมั้ย?</h3>
@@ -152,7 +163,7 @@ const Home: React.FC = () => {
             </IonRow>
           </IonGrid>
 
-          {/* Recommended Fields From Firestore */}
+          {/* Recommended Fields */}
           <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <h3 style={{color:'white'}}>สนามยอดฮิต 🔥</h3>
             <IonButton fill="clear" color="warning" onClick={() => history.push('/venue-search')}>ดูทั้งหมด</IonButton>
@@ -171,7 +182,7 @@ const Home: React.FC = () => {
                   const path = v.type === 'football' ? `/football-venue/${v.id}` : `/badminton-venue`;
                   history.push(path, { venueId: v.id });
                 }}
-                style={{ borderRadius: '24px', margin: '0 0 20px 0', width: '100%', background: '#1a1a1a' }}
+                style={{ borderRadius: '24px', margin: '0 0 20px 0', width: '100%', background: '#1a1a1a', cursor: 'pointer' }}
               >
                 <div style={{ height: '180px', position: 'relative' }}>
                   <img src={v.imageUrl} alt={v.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

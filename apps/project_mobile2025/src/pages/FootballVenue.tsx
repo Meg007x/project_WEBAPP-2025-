@@ -1,3 +1,4 @@
+// src/pages/FootballVenue.tsx
 import React, { useEffect, useState } from 'react';
 import {
   IonContent, IonHeader, IonPage, IonToolbar, IonButtons, IonBackButton,
@@ -32,13 +33,24 @@ const FootballVenue: React.FC = () => {
     })();
   }, [id]);
 
-  // ✅ ให้เหมือนฝั่งแบด: เปิด Maps ด้วย ?q= (ใช้ location ก่อน ถ้าไม่มีค่อยใช้ชื่อสนาม)
+  // ⭐️ หมัดสตาร์แพลตตินั่ม: โยนพิกัดใส่ Google Maps ให้ปักหมุดตรงเป๊ะ!
   const openGoogleMap = () => {
-    const mapQuery =
-      venue?.location ||
-      (venue?.name ? `สนามฟุตบอล ${venue.name}` : '16.485,102.855');
+    let coords = venue?.mapUrl;
 
-    window.open(`https://maps.google.com/?q=${encodeURIComponent(mapQuery)}`, '_blank');
+    // ถ้าไม่มี mapUrl ในฐานข้อมูล ให้เช็คชื่อสนาม
+    if (!coords) {
+      const venueName = venue?.name?.toLowerCase() || '';
+      if (venueName.includes('kku') || venueName.includes('มข')) {
+        // พิกัดสนาม มข. ที่แกหามา!
+        coords = "16.476157869512683,102.81632530274128";
+      } else {
+        // ถ้าเป็นสนามอื่นก็เอาชื่อไปค้นหาขัดตาทัพไปก่อน
+        coords = venue?.location || venue?.name ? encodeURIComponent(`${venue?.name} ขอนแก่น`) : "16.485,102.855";
+      }
+    }
+
+    // ใช้ Official API เปิดแผนที่และปักหมุด
+    window.open(`https://maps.google.com/?q=${coords}`, '_blank');
   };
 
   if (loading) {
@@ -59,7 +71,6 @@ const FootballVenue: React.FC = () => {
     );
   }
 
-  // ✅ ให้เหมือนแบด: ถ้า priceRange เป็น "500 - 800" เอาเลขหลังเป็นราคากลางคืน
   const nightPrice =
     (venue?.priceRange && String(venue.priceRange).includes('-'))
       ? String(venue.priceRange).split('-')[1].trim()
@@ -71,14 +82,12 @@ const FootballVenue: React.FC = () => {
       ? String(venue.priceRange).split('-')[0].trim()
       : '500');
 
-  // ✅ facilities ให้เหมือนแบด (ถ้าไม่มีใน DB ให้ fallback)
   const facilities: string[] = Array.isArray(venue?.facilities)
     ? venue.facilities
     : ['ที่จอดรถ', 'WiFi', 'ห้องน้ำ', 'เครื่องดื่ม'];
 
   return (
     <IonPage>
-      {/* ✅ Header เหมือน BadmintonVenue */}
       <IonHeader className="ion-no-border">
         <IonToolbar className="lux-toolbar">
           <IonButtons slot="start">
@@ -90,10 +99,8 @@ const FootballVenue: React.FC = () => {
         </IonToolbar>
       </IonHeader>
 
-      {/* ✅ Content wrapper เหมือน BadmintonVenue */}
       <IonContent fullscreen className="lux-page">
         <div className="lux-container">
-          {/* ✅ Banner เหมือนแบด */}
           <div
             style={{
               borderRadius: '20px',
@@ -110,7 +117,6 @@ const FootballVenue: React.FC = () => {
             />
           </div>
 
-          {/* ✅ ชื่อ + rating เหมือนแบด */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h1 className="user-name" style={{ fontSize: '1.8rem', margin: 0 }}>
               {venue.name}
@@ -123,7 +129,6 @@ const FootballVenue: React.FC = () => {
             </IonBadge>
           </div>
 
-          {/* ✅ ระยะทาง เหมือนแบด */}
           <p
             style={{
               color: '#aaa',
@@ -137,7 +142,6 @@ const FootballVenue: React.FC = () => {
             ห่างจากคุณ {venue.distance ?? '2.5'} กม.
           </p>
 
-          {/* ✅ กล่องโซน + ปุ่มดูแผนที่ เหมือนแบด */}
           <div
             style={{
               background: '#222',
@@ -159,16 +163,16 @@ const FootballVenue: React.FC = () => {
               </div>
             </div>
 
+            {/* ⭐️ แก้สีปุ่มเป็นสีเหลือง (warning) ให้เข้ากับฟุตบอล */}
             <IonButton
               fill="outline"
-              color="primary"
+              color="warning"
               onClick={openGoogleMap}
             >
               ดูแผนที่
             </IonButton>
           </div>
 
-          {/* ✅ การ์ดเวลา/ราคา แบบ 2 คอลัมน์ เหมือนแบด */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '20px' }}>
             <div className="sport-card" style={{ padding: '15px', background: '#1a1a1a', borderRadius: '15px' }}>
               <IonIcon icon={timeOutline} style={{ color: '#FFD700', fontSize: '24px' }} />
@@ -187,7 +191,6 @@ const FootballVenue: React.FC = () => {
             </div>
           </div>
 
-          {/* ✅ อัตราค่าบริการ เหมือนแบด */}
           <div className="field-card" style={{ padding: '20px', marginTop: '20px', borderRadius: '20px', background: '#1a1a1a' }}>
             <h3 style={{ color: 'white', margin: 0, borderLeft: '4px solid #FFD700', paddingLeft: '10px' }}>
               อัตราค่าบริการ
@@ -198,7 +201,6 @@ const FootballVenue: React.FC = () => {
             </ul>
           </div>
 
-          {/* ✅ Facilities เป็น badge เหมือนแบด */}
           <div style={{ display: 'flex', gap: '8px', marginTop: '20px', flexWrap: 'wrap' }}>
             {facilities.map((fac: string, i: number) => (
               <IonBadge key={i} color="medium" style={{ padding: '5px 10px' }}>
@@ -207,7 +209,6 @@ const FootballVenue: React.FC = () => {
             ))}
           </div>
 
-          {/* ✅ ปุ่มจองท้ายหน้า เหมือนแบด */}
           <div style={{ marginTop: '30px', paddingBottom: '30px' }}>
             <IonButton
               expand="block"

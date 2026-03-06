@@ -71,12 +71,6 @@ const BadmintonVenue: React.FC = () => {
     }
   };
 
-  const openGoogleMap = () => {
-    const coords = venue.id === 1 ? { lat: 16.4322, lng: 102.8390 } : { lat: 16.4650, lng: 102.8250 };
-    const mapUrl = `https://www.google.com/maps?q=${coords.lat},${coords.lng}`;
-    window.open(mapUrl, '_system');
-  };
-
   return (
     <IonPage>
       <IonHeader className="ion-no-border">
@@ -109,15 +103,19 @@ const BadmintonVenue: React.FC = () => {
                   <div style={{ color: '#888', fontSize: '0.8rem' }}>{venue.zone}</div>
                 </div>
              </div>
-            {/* หาปุ่ม IonButton ดูแผนที่ ของฝั่งแบดมินตัน แล้วแก้ข้างใน onClick เป็นแบบนี้ครับ */}
+             
+            {/* ⭐️ หมัดเด็ดอยู่ตรงนี้: เช็ค ID สนามแล้วโยนพิกัดให้ Google Maps ปักหมุดทันที */}
             <IonButton 
               fill="outline" 
-              color="primary" // (สีตามที่คุณตั้งไว้ฝั่งแบดมินตัน)
+              color="primary" 
               onClick={() => {
-                // สมมติว่าในโค้ดเดิมใช้พิกัด "16.485,102.855" หรือใช้ตัวแปร
-                // แก้ URL ให้เป็นฟอร์แมตนี้ครับ (สังเกตว่าหลัง .com/ จะเป็น ?q= เลย)
-                const mapQuery = venue?.location || "16.485,102.855"; // หรือใช้ venue.name 
-                window.open(`https://maps.google.com/?q=${mapQuery}`, '_blank');
+                // ถ้าเป็น 1 (PS) ให้ใช้พิกัดนึง ถ้าไม่ใช่ (ก็คือ PCR) ให้ใช้อีกพิกัดนึง
+                const coords = venue.id === 1 
+                  ? "16.422796457793375,102.81379368382092" 
+                  : "16.408985040263513,102.78387621907241";
+                
+                // ใช้ URL นำทางของ Google Maps API
+                window.open(`https://www.google.com/maps/search/?api=1&query=${coords}`, '_blank');
               }}
             >
               ดูแผนที่

@@ -18,12 +18,15 @@ const BadmintonVenueBlueZone: React.FC = () => {
     totalCourts: 8 
   };
 
-  // URL สำหรับ Google Map ของ Blue Zone (เปลี่ยนชื่อเป็น openGoogleMap ให้ตรงกับข้างล่าง)
-  const openGoogleMap = () => {
-    // ใส่พิกัดคร่าวๆ ของ Blue Zone
-    const lat = 16.4850;
-    const lng = 102.8550;
-    const mapUrl = `http://maps.google.com/?q=$?q=${lat},${lng}`;
+  // URL สำหรับ Google Map ของ Blue Zone (แก้ไขเป็น API บังคับนำทาง)
+const openGoogleMap = () => {
+    // พิกัดของ Blue Zone ที่แกเพิ่งหามาได้
+    const lat = 16.4913769872995; 
+    const lng = 102.82520462885827;
+
+    // ⭐️ ใช้คำสั่งของ Google Maps Search API บังคับให้ปักหมุด
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    
     window.open(mapUrl, '_blank');
   };
 
@@ -64,9 +67,9 @@ const BadmintonVenueBlueZone: React.FC = () => {
                 <div style={{ color: '#fff', fontWeight: 'bold' }}>ตำแหน่งที่ตั้ง</div>
                 <div style={{ color: '#888', fontSize: '0.9rem' }}>ถ.เลี่ยงเมือง ต.ศิลา (ใกล้ดูโฮม)</div>
              </div>
-              {/* เรียกใช้ openGoogleMap ที่เพิ่งเปลี่ยนชื่อมา */}
-              <IonButton color="primary" onClick={openGoogleMap} style={{ margin: '16px' }}>
-                <IonIcon icon={locationOutline} /> แผนที่
+              {/* เรียกใช้ openGoogleMap ที่แก้ไขแล้ว */}
+              <IonButton color="primary" fill="outline" onClick={openGoogleMap} style={{ margin: '16px' }}>
+                ดูแผนที่
               </IonButton>
           </div>
 
@@ -98,7 +101,7 @@ const BadmintonVenueBlueZone: React.FC = () => {
           </div>
            <div style={{ marginTop: '40px' }}>
             {/* ✅ ปุ่มจอง วิ่งไปหน้า CourtSelectBlueZone */}
-              <IonButton expand="block" color="warning" onClick={() => history.push({ pathname: '/booking-bluezone', state: { venue }})} shape="round" style={{ fontWeight: 'bold', height: '50px' }}>
+              <IonButton expand="block" color="warning" onClick={() => history.push({ pathname: '/booking-bluezone', state: { venue }})} shape="round" style={{ fontWeight: 'bold', height: '50px', '--color': 'black' }}>
                         เช็คสนามว่าง / จองเลย <IonIcon icon={arrowForward} slot="end" />
               </IonButton>
             </div>

@@ -10,13 +10,20 @@ import { useHistory } from 'react-router-dom';
 import './Home.css';
 import { calcDurationHours, calcTotalPrice } from '../utils/pricing';
 
+// ✅ นำเข้า Firebase
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { isTimeOverlap } from '../utils/time';
+
 const CourtSelectBlueZone: React.FC = () => {
   const history = useHistory();
-
   const [selectedCourts, setSelectedCourts] = useState<number[]>([]);
   const [startTime, setStartTime] = useState<string>('17:00');
   const [endTime, setEndTime] = useState<string>('18:00');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString());
+  
+  // ✅ State เก็บ ID
+  const [occupiedCourts, setOccupiedCourts] = useState<number[]>([]);
 
   // ข้อมูลสนาม Blue Zone
   const venue = { 
@@ -39,8 +46,59 @@ const CourtSelectBlueZone: React.FC = () => {
     }
   }, [startTime]);
 
+  // ✅ เช็คการจองทับซ้อน
+// ✅ เช็คการจองทับซ้อน (เวอร์ชั่นปรับปรุง: ดัก Format วันที่และ ID อัตโนมัติ)
+  useEffect(() => {
+    let mounted = true;
+    const checkAvailability = async () => {
+      if (!venue?.id || !selectedDate || !startTime || !endTime) return;
+      
+      try {
+        const dateString = selectedDate.split('T')[0]; // ตัดเอาแค่ 2026-03-06
+        
+        // 1. ดึงข้อมูลการจองทั้งหมดมาเช็ค (ไม่ต้องใช้ where เพื่อป้องกันปัญหา Type ไม่ตรงกัน)
+        const snap = await getDocs(collection(db, 'bookings'));
+        let busy: number[] = [];
+
+        snap.forEach(doc => {
+          const data = doc.data();
+          
+          // 2. เช็คว่า ID สถานที่ตรงกันไหม (จับแปลงเป็น String ให้หมดเพื่อเทียบกัน)
+          if (String(data.venueId) === String(venue.id)) {
+            
+            // 3. เช็ควันที่ว่าตรงกันไหม (จับตัดให้เหลือแค่ YYYY-MM-DD เพื่อเทียบ)
+            const dbDate = data.date ? String(data.date).split('T')[0] : '';
+            if (dbDate === dateString) {
+              
+              // 4. เช็คเวลาทับซ้อน
+              if (isTimeOverlap(startTime, endTime, data.startTime, data.endTime)) {
+                if (Array.isArray(data.courtIds)) {
+                  // ฝั่งแบดมินตัน: ดันเข้า array โดยแปลงเป็น Number
+                  busy.push(...data.courtIds.map(Number)); 
+                }
+              }
+            }
+          }
+        });
+
+        // ลองพ่นค่าออกมาดูใน Console ว่าจับสนามที่ไม่ว่างได้ไหม
+        console.log("สนามที่ถูกจองแล้วเวลานี้:", busy);
+
+        if (mounted) {
+          setOccupiedCourts(busy);
+          // เอาสนามที่ถูกล็อคออกจากตะกร้าที่เลือกไว้
+          setSelectedCourts(prev => prev.filter(id => !busy.includes(id)));
+        }
+      } catch (error) {
+        console.error("Error checking availability:", error);
+      }
+    };
+    
+    checkAvailability();
+    return () => { mounted = false; };
+  }, [venue?.id, selectedDate, startTime, endTime]);
+
   const courts = useMemo(() => Array.from({ length: 8 }, (_, i) => ({ id: i + 1 })), []);
-  
   const timeOptions = useMemo(() => {
     const arr = [];
     for (let i = 9; i <= 24; i++) arr.push(`${String(i).padStart(2, '0')}:00`);
@@ -58,7 +116,6 @@ const CourtSelectBlueZone: React.FC = () => {
         endTime, 
         units: selectedCourts.length 
     });
-    
     history.push({
       pathname: '/booking-detail',
       state: { 
@@ -85,7 +142,6 @@ const CourtSelectBlueZone: React.FC = () => {
       <IonContent fullscreen className="lux-page">
         <div className="lux-container">
           
-          {/* Card เลือกวันและเวลา แบบเดียวกับ PS/PCR */}
           <div className="lux-card" style={{ padding: '20px', marginBottom: '25px', border: '1px solid #FFD700' }}>
             <div style={{ marginBottom: '15px' }}>
               <div style={{ color: '#FFD700', fontSize: '0.9rem', marginBottom: '8px' }}>
@@ -128,19 +184,28 @@ const CourtSelectBlueZone: React.FC = () => {
             เลือกสนามว่าง (8 คอร์ท)
           </h3>
 
-          {/* ใช้ Grid 8 คอร์ท เหมือน PS */}
           <div className="court-grid-8">
-            {courts.map((court) => (
-              <div 
-                key={court.id} 
-                className={`court-box ${selectedCourts.includes(court.id) ? 'selected' : ''}`} 
-                onClick={() => toggleCourt(court.id)}
-              >
-                <div className="court-lines"></div>
-                <h3 style={{ margin: 0, zIndex: 2, color: selectedCourts.includes(court.id) ? 'black' : 'white' }}>{court.id}</h3>
-                {selectedCourts.includes(court.id) && <IonIcon icon={checkmarkCircle} style={{ position: 'absolute', top: 5, right: 5, color: 'black' }} />}
-              </div>
-            ))}
+            {courts.map((court) => {
+              // ✅ ล็อคปุ่ม
+              const isOccupied = occupiedCourts.includes(court.id);
+              return (
+                <div 
+                  key={court.id} 
+                  className={`court-box ${selectedCourts.includes(court.id) ? 'selected' : ''}`} 
+                  onClick={() => !isOccupied && toggleCourt(court.id)}
+                  style={{ 
+                    opacity: isOccupied ? 0.3 : 1,
+                    pointerEvents: isOccupied ? 'none' : 'auto',
+                    backgroundColor: isOccupied ? '#111' : '' 
+                  }}
+                >
+                  <div className="court-lines"></div>
+                  <h3 style={{ margin: 0, zIndex: 2, color: selectedCourts.includes(court.id) ? 'black' : 'white' }}>{court.id}</h3>
+                  {selectedCourts.includes(court.id) && <IonIcon icon={checkmarkCircle} style={{ position: 'absolute', top: 5, right: 5, color: 'black' }} />}
+                  {isOccupied && <span style={{fontSize:'0.7rem', color:'red', position:'absolute', bottom:5}}>ไม่ว่าง</span>}
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ height: '60px' }}></div>

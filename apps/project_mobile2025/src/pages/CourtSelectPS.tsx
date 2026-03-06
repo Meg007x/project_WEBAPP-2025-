@@ -8,8 +8,12 @@ import {
 import { checkmarkCircle, calendarOutline, arrowForwardOutline } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import './Home.css';
-
 import { calcDurationHours, calcTotalPrice } from '../utils/pricing';
+
+// ✅ นำเข้า Firebase
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { isTimeOverlap } from '../utils/time';
 
 const CourtSelectPS: React.FC = () => {
   const history = useHistory();
@@ -20,10 +24,13 @@ const CourtSelectPS: React.FC = () => {
   const [endTime, setEndTime] = useState<string>('18:00');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString());
 
+  // ✅ State เก็บ ID
+  const [occupiedCourts, setOccupiedCourts] = useState<number[]>([]);
+
   const [venue, setVenue] = useState<any>({
     id: 1,
     name: 'PS Badminton',
-    totalCourts: 8, // ✅ ฟิกซ์ 8 คอร์ทสำหรับ PS
+    totalCourts: 8,
     priceRange: '120 - 180'
   });
 
@@ -41,7 +48,58 @@ const CourtSelectPS: React.FC = () => {
     }
   }, [startTime]);
 
-  // สร้างคอร์ท 8 คอร์ทเสมอสำหรับ PS
+  // ✅ เช็คการจองทับซ้อน
+// ✅ เช็คการจองทับซ้อน (เวอร์ชั่นปรับปรุง: ดัก Format วันที่และ ID อัตโนมัติ)
+  useEffect(() => {
+    let mounted = true;
+    const checkAvailability = async () => {
+      if (!venue?.id || !selectedDate || !startTime || !endTime) return;
+      
+      try {
+        const dateString = selectedDate.split('T')[0]; // ตัดเอาแค่ 2026-03-06
+        
+        // 1. ดึงข้อมูลการจองทั้งหมดมาเช็ค (ไม่ต้องใช้ where เพื่อป้องกันปัญหา Type ไม่ตรงกัน)
+        const snap = await getDocs(collection(db, 'bookings'));
+        let busy: number[] = [];
+
+        snap.forEach(doc => {
+          const data = doc.data();
+          
+          // 2. เช็คว่า ID สถานที่ตรงกันไหม (จับแปลงเป็น String ให้หมดเพื่อเทียบกัน)
+          if (String(data.venueId) === String(venue.id)) {
+            
+            // 3. เช็ควันที่ว่าตรงกันไหม (จับตัดให้เหลือแค่ YYYY-MM-DD เพื่อเทียบ)
+            const dbDate = data.date ? String(data.date).split('T')[0] : '';
+            if (dbDate === dateString) {
+              
+              // 4. เช็คเวลาทับซ้อน
+              if (isTimeOverlap(startTime, endTime, data.startTime, data.endTime)) {
+                if (Array.isArray(data.courtIds)) {
+                  // ฝั่งแบดมินตัน: ดันเข้า array โดยแปลงเป็น Number
+                  busy.push(...data.courtIds.map(Number)); 
+                }
+              }
+            }
+          }
+        });
+
+        // ลองพ่นค่าออกมาดูใน Console ว่าจับสนามที่ไม่ว่างได้ไหม
+        console.log("สนามที่ถูกจองแล้วเวลานี้:", busy);
+
+        if (mounted) {
+          setOccupiedCourts(busy);
+          // เอาสนามที่ถูกล็อคออกจากตะกร้าที่เลือกไว้
+          setSelectedCourts(prev => prev.filter(id => !busy.includes(id)));
+        }
+      } catch (error) {
+        console.error("Error checking availability:", error);
+      }
+    };
+    
+    checkAvailability();
+    return () => { mounted = false; };
+  }, [venue?.id, selectedDate, startTime, endTime]);
+
   const courts = useMemo(() => {
     return Array.from({ length: 8 }, (_, i) => ({
       id: i + 1,
@@ -68,7 +126,6 @@ const CourtSelectPS: React.FC = () => {
       endTime,
       units: selectedCourts.length
     });
-
     history.push({
       pathname: '/booking-detail',
       state: {
@@ -79,7 +136,6 @@ const CourtSelectPS: React.FC = () => {
         date: selectedDate,
         totalPrice: finalPrice, 
         venue: { ...venue, name: 'PS Badminton' }
-        // ❌ เอาการส่งค่ารองเท้าจากหน้านี้ออกไปแล้ว
       }
     });
   };
@@ -107,7 +163,7 @@ const CourtSelectPS: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <div style={{ flex: 1 }}>
+               <div style={{ flex: 1 }}>
                 <div style={{ color: '#FFD700', fontSize: '0.8rem' }}>เริ่ม</div>
                 <IonSelect value={startTime} onIonChange={e => setStartTime(e.detail.value)} className="lux-input" interface="action-sheet">
                   {timeOptions.slice(0, -1).map(t => <IonSelectOption key={t} value={t}>{t}</IonSelectOption>)}
@@ -132,13 +188,27 @@ const CourtSelectPS: React.FC = () => {
           </h3>
 
           <div className="court-grid-8">
-            {courts.map((court) => (
-              <div key={court.id} className={`court-box ${selectedCourts.includes(court.id) ? 'selected' : ''}`} onClick={() => toggleCourt(court.id)}>
-                <div className="court-lines"></div>
-                <h3 style={{ margin: 0, zIndex: 2, color: selectedCourts.includes(court.id) ? 'black' : 'white' }}>{court.id}</h3>
-                {selectedCourts.includes(court.id) && <IonIcon icon={checkmarkCircle} style={{ position: 'absolute', top: 5, right: 5, color: 'black' }} />}
-              </div>
-            ))}
+            {courts.map((court) => {
+              // ✅ ล็อคปุ่ม
+              const isOccupied = occupiedCourts.includes(court.id);
+              return (
+                <div 
+                  key={court.id} 
+                  className={`court-box ${selectedCourts.includes(court.id) ? 'selected' : ''}`} 
+                  onClick={() => !isOccupied && toggleCourt(court.id)}
+                  style={{ 
+                    opacity: isOccupied ? 0.3 : 1,
+                    pointerEvents: isOccupied ? 'none' : 'auto',
+                    backgroundColor: isOccupied ? '#111' : '' 
+                  }}
+                >
+                  <div className="court-lines"></div>
+                  <h3 style={{ margin: 0, zIndex: 2, color: selectedCourts.includes(court.id) ? 'black' : 'white' }}>{court.id}</h3>
+                  {selectedCourts.includes(court.id) && <IonIcon icon={checkmarkCircle} style={{ position: 'absolute', top: 5, right: 5, color: 'black' }} />}
+                  {isOccupied && <span style={{fontSize:'0.7rem', color:'red', position:'absolute', bottom:5}}>ไม่ว่าง</span>}
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ height: '60px' }}></div>

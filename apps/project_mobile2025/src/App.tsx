@@ -7,6 +7,8 @@ import { IonReactRouter } from '@ionic/react-router';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
+import Profile from './pages/Profile';
+import BookingHistory from './pages/BookingHistory';
 
 import BadmintonCourts from './pages/BadmintonCourts';
 import BadmintonVenue from './pages/BadmintonVenue';
@@ -77,6 +79,9 @@ const App: React.FC = () => (
         {/* Public */}
         <Route exact path="/login" component={Login} />
         <Route exact path="/register" component={Register} />
+        <Route exact path="/profile" component={Profile} />
+        <Route exact path="/history" component={BookingHistory} />
+        
 
         {/* Private */}
         <PrivateRoute exact path="/home" component={Home} />

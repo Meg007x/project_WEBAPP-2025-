@@ -1,3 +1,4 @@
+// src/pages/FootballSelect.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   IonContent, IonHeader, IonPage, IonToolbar, IonButtons, IonBackButton,
@@ -7,20 +8,24 @@ import {
 import { checkmarkCircle, calendarOutline, arrowForwardOutline } from 'ionicons/icons';
 import { useHistory, useLocation } from 'react-router-dom';
 import './Home.css';
-
-// สมมติว่าคุณมีไฟล์ utils/pricing.ts เหมือนของแบด
 import { calcDurationHours, calcTotalPrice } from '../utils/pricing';
+
+// ✅ นำเข้า Firebase
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { isTimeOverlap } from '../utils/time';
 
 const FootballSelect: React.FC = () => {
   const history = useHistory();
   const location = useLocation<any>();
-
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [startTime, setStartTime] = useState<string>('17:00');
   const [endTime, setEndTime] = useState<string>('18:00');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString());
 
-  // รับข้อมูล venue จาก navigation state
+  // ✅ State เก็บ ID
+  const [occupiedCourts, setOccupiedCourts] = useState<string[]>([]);
+
   const [venue, setVenue] = useState<any>(location.state?.venue || null);
   const [subvenues, setSubvenues] = useState<any[]>([]);
 
@@ -29,12 +34,8 @@ const FootballSelect: React.FC = () => {
         setVenue(location.state.venue);
     }
     setSelectedFields([]);
-    
-    // โหลดสนามย่อยจาก Firebase (หรือใช้ข้อมูลจำลองถ้ายังไม่มี)
-    // ในที่นี้ผมคง logic เดิมของคุณในการดึง subvenues ไว้
   });
 
-  // Logic ปรับเวลาสิ้นสุดอัตโนมัติ (เหมือนแบด)
   useEffect(() => {
     const s = Number(startTime.split(':')[0]);
     const e = Number(endTime.split(':')[0]);
@@ -44,33 +45,74 @@ const FootballSelect: React.FC = () => {
     }
   }, [startTime]);
 
+  // ✅ เช็คการจองทับซ้อน (ใช้ string ID เพราะฟุตบอลมักใช้ id เป็น 'A', 'B' หรือ 'field_1')
+// ✅ เช็คการจองทับซ้อน (เวอร์ชั่นปรับปรุงสำหรับฟุตบอล)
+  useEffect(() => {
+    let mounted = true;
+    const checkAvailability = async () => {
+      if (!venue?.id || !selectedDate || !startTime || !endTime) return;
+      
+      try {
+        const dateString = selectedDate.split('T')[0];
+        
+        const snap = await getDocs(collection(db, 'bookings'));
+        let busy: string[] = []; // เปลี่ยนเป็น string[]
+
+        snap.forEach(doc => {
+          const data = doc.data();
+          
+          if (String(data.venueId) === String(venue.id)) {
+            const dbDate = data.date ? String(data.date).split('T')[0] : '';
+            
+            if (dbDate === dateString) {
+              if (isTimeOverlap(startTime, endTime, data.startTime, data.endTime)) {
+                if (Array.isArray(data.courtIds)) {
+                  // ฝั่งฟุตบอล: แปลงเป็น String
+                  busy.push(...data.courtIds.map(String)); 
+                }
+              }
+            }
+          }
+        });
+
+        console.log("สนามฟุตบอลที่ถูกจองแล้วเวลานี้:", busy);
+
+        if (mounted) {
+          setOccupiedCourts(busy);
+          setSelectedFields(prev => prev.filter(id => !busy.includes(id)));
+        }
+      } catch (error) {
+        console.error("Error checking availability:", error);
+      }
+    };
+    
+    checkAvailability();
+    return () => { mounted = false; };
+  }, [venue?.id, selectedDate, startTime, endTime]);
+
+
   const timeOptions = useMemo(() => {
     const arr: string[] = [];
     for (let i = 8; i <= 24; i++) arr.push(`${String(i).padStart(2, '0')}:00`);
     return arr;
   }, []);
-
   const duration = useMemo(() => calcDurationHours(startTime, endTime), [startTime, endTime]);
 
   const toggleField = (id: string) => {
-    setSelectedFields(prev => 
-      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
-    );
+    setSelectedFields(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
   };
 
   const goToBooking = () => {
-    // คำนวณราคารวม (ใช้ logic เดียวกับแบด)
     const totalPrice = calcTotalPrice({
       priceRange: venue?.priceRange || "500 - 800",
       startTime,
       endTime,
       units: selectedFields.length
     });
-
     history.push({
       pathname: '/booking-detail',
       state: {
-        courtIds: selectedFields, // ใช้ key เดิมเพื่อให้หน้าถัดไปรับค่าได้
+        courtIds: selectedFields, 
         startTime,
         endTime,
         duration,
@@ -97,7 +139,6 @@ const FootballSelect: React.FC = () => {
       <IonContent fullscreen className="lux-page">
         <div className="lux-container">
 
-          {/* Card เลือกวันที่และเวลา - สไตล์เดียวกับแบด */}
           <div className="lux-card" style={{ padding: '20px', marginBottom: '25px', border: '1px solid #FFD700' }}>
             <div style={{ marginBottom: '15px' }}>
               <div style={{ color: '#FFD700', fontSize: '0.9rem', marginBottom: '8px' }}>
@@ -147,45 +188,52 @@ const FootballSelect: React.FC = () => {
             เลือกสนามที่ว่าง
           </h3>
 
-          {/* Grid สนามฟุตบอล - ใช้สไตล์เดียวกับแบดแต่ปรับสัดส่วนนิดหน่อย */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px' }}>
-            {/* ในที่นี้ถ้า subvenues ยังไม่โหลดจาก Firebase ผมจำลองให้ 2 สนามก่อน */}
-            {(subvenues.length > 0 ? subvenues : [{id:'A', name:'สนาม A'}, {id:'B', name:'สนาม B'}]).map((field) => (
-              <div
-                key={field.id}
-                className={`court-box ${selectedFields.includes(field.id) ? 'selected' : ''}`}
-                onClick={() => toggleField(field.id)}
-                style={{ 
-                    height: '100px', 
-                    display: 'flex', 
-                    flexDirection: 'column', 
-                    justifyContent: 'center',
-                    position: 'relative',
-                    background: selectedFields.includes(field.id) ? '#FFD700' : '#1a1a1a',
-                    border: '1px solid #333',
-                    borderRadius: '15px',
-                    textAlign: 'center'
-                }}
-              >
-                <div className="court-lines" style={{ opacity: 0.2 }}></div>
-                <h3 style={{ margin: 0, zIndex: 2, color: selectedFields.includes(field.id) ? 'black' : 'white', fontWeight: 'bold' }}>
-                  {field.name}
-                </h3>
-                <span style={{ fontSize: '0.7rem', zIndex: 2, color: selectedFields.includes(field.id) ? '#333' : '#888' }}>
-                    หญ้าเทียม Indoor
-                </span>
-                {selectedFields.includes(field.id) && (
-                  <IonIcon icon={checkmarkCircle} style={{ position: 'absolute', top: 10, right: 10, color: 'black', fontSize: '1.2rem' }} />
-                )}
-              </div>
-            ))}
+            {(subvenues.length > 0 ? subvenues : [{id:'A', name:'สนาม A'}, {id:'B', name:'สนาม B'}]).map((field) => {
+              // ✅ ล็อคปุ่ม
+              const isOccupied = occupiedCourts.includes(field.id);
+              
+              return (
+                <div
+                  key={field.id}
+                  className={`court-box ${selectedFields.includes(field.id) ? 'selected' : ''}`}
+                  onClick={() => !isOccupied && toggleField(field.id)}
+                  style={{ 
+                      height: '100px', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      justifyContent: 'center',
+                      position: 'relative',
+                      // ✅ เปลี่ยนสีพื้นหลังถ้ามีการจอง
+                      background: isOccupied ? '#111' : (selectedFields.includes(field.id) ? '#FFD700' : '#1a1a1a'),
+                      border: '1px solid #333',
+                      borderRadius: '15px',
+                      textAlign: 'center',
+                      opacity: isOccupied ? 0.3 : 1,
+                      pointerEvents: isOccupied ? 'none' : 'auto'
+                  }}
+                >
+                  <div className="court-lines" style={{ opacity: 0.2 }}></div>
+                  <h3 style={{ margin: 0, zIndex: 2, color: selectedFields.includes(field.id) ? 'black' : 'white', fontWeight: 'bold' }}>
+                    {field.name}
+                  </h3>
+                  <span style={{ fontSize: '0.7rem', zIndex: 2, color: selectedFields.includes(field.id) ? '#333' : '#888' }}>
+                      หญ้าเทียม Indoor
+                  </span>
+                  {selectedFields.includes(field.id) && (
+                    <IonIcon icon={checkmarkCircle} style={{ position: 'absolute', top: 10, right: 10, color: 'black', fontSize: '1.2rem' }} />
+                  )}
+                  {/* ✅ แสดงข้อความว่าไม่ว่าง */}
+                  {isOccupied && <span style={{fontSize:'0.8rem', color:'red', position:'absolute', bottom:5, width:'100%'}}>ไม่ว่าง</span>}
+                </div>
+              );
+            })}
           </div>
 
           <div style={{ height: '80px' }}></div>
         </div>
       </IonContent>
 
-      {/* Footer ปุ่มยืนยัน - สไตล์เดียวกับแบด */}
       {selectedFields.length > 0 && (
         <IonFooter className="ion-no-border">
           <IonToolbar className="lux-toolbar">
