@@ -1,4 +1,3 @@
-// src/pages/BookingHistory.tsx
 import React, { useEffect, useState } from 'react';
 import {
   IonContent, IonHeader, IonPage, IonToolbar, IonButtons, IonBackButton,
@@ -13,7 +12,7 @@ import './Home.css';
 const BookingHistory: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const auth = getAuth();
   const user = auth.currentUser;
 
@@ -21,60 +20,128 @@ const BookingHistory: React.FC = () => {
     let mounted = true;
 
     const fetchHistory = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        // ดึงการจองทั้งหมดที่ userId ตรงกับคนที่ล็อกอินอยู่
+
         const q = query(collection(db, 'bookings'), where('userId', '==', user.uid));
         const snap = await getDocs(q);
-        
+
         let fetchedBookings: any[] = [];
         snap.forEach(doc => {
           fetchedBookings.push({ id: doc.id, ...doc.data() });
         });
 
-        // นำมาเรียงลำดับ (Sort) ด้วยวันที่เตะ (date) จาก ใหม่ ไป เก่า
         fetchedBookings.sort((a, b) => {
           const dateA = new Date(`${a.date}T${a.startTime}:00`).getTime();
           const dateB = new Date(`${b.date}T${b.startTime}:00`).getTime();
-          return dateB - dateA; // มากไปน้อย (ใหม่ไปเก่า)
+          return dateB - dateA;
         });
 
         if (mounted) {
           setHistory(fetchedBookings);
         }
       } catch (error) {
-        console.error("Error fetching history:", error);
+        console.error('Error fetching history:', error);
       } finally {
         if (mounted) setLoading(false);
       }
     };
 
     fetchHistory();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, [user]);
 
-  // ฟังก์ชันช่วยแปลงวันที่ให้ดูอ่านง่ายขึ้น
   const formatDate = (dateStr: string) => {
     if (!dateStr) return 'ไม่ระบุวันที่';
     const dateObj = new Date(dateStr);
     return dateObj.toLocaleDateString('th-TH', {
-      year: 'numeric', month: 'short', day: 'numeric'
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
+  };
+
+  // ✅ เช็กว่าเป็นฟุตบอลหรือไม่ เหมือนหน้า BookingTicket
+  const isFootballVenue = (item: any) => {
+    const venueName = String(item?.venueName || item?.venue?.name || '').toLowerCase();
+    const venueId = String(item?.venueId || item?.venue?.id || '').toLowerCase();
+
+    return (
+      venueName.includes('football') ||
+      venueName.includes('soccer') ||
+      venueName.includes('field') ||
+      venueName.includes('arena') ||
+      venueName.includes('stadium') ||
+      venueName.includes('สนามบอล') ||
+      venueName.includes('ฟุตบอล') ||
+      venueName.includes('หญ้าเทียม') ||
+      venueId.startsWith('football_')
+    );
+  };
+
+  // ✅ แปลง courtIds ให้แสดงเหมือนหน้าตั๋ว
+  const formatCourtText = (courtIdsAny: any, item: any) => {
+    const ids = Array.isArray(courtIdsAny) ? courtIdsAny : [];
+    if (ids.length === 0) return 'ไม่ได้ระบุ';
+
+    const isFootball = isFootballVenue(item);
+
+    if (isFootball) {
+      const labels = ids.map((x) => {
+        if (typeof x === 'number') return `Field ${x}`;
+
+        const s = String(x);
+        const m1 = s.match(/mock_field_(\d+)/i);
+        if (m1?.[1]) return `Field ${m1[1]}`;
+
+        const m2 = s.match(/(?:^|_)f(\d+)$/i) || s.match(/f(\d+)/i);
+        if (m2?.[1]) return `Field ${m2[1]}`;
+
+        const num = s.match(/\d+/);
+        if (num?.[0]) return `Field ${num[0]}`;
+
+        return `Field ${s.replace(/^mock_/i, '').replace(/_/g, ' ').trim()}`;
+      });
+
+      return labels.join(', ');
+    }
+
+    // แบดมินตัน
+    return ids.map((x) => {
+      if (typeof x === 'number') return `Court ${x}`;
+
+      const s = String(x);
+      const num = s.match(/\d+/);
+      if (num?.[0]) return `Court ${num[0]}`;
+
+      return `Court ${s}`;
+    }).join(', ');
   };
 
   return (
     <IonPage>
       <IonHeader className="ion-no-border">
         <IonToolbar className="lux-toolbar">
-          <IonButtons slot="start"><IonBackButton defaultHref="/home" color="light" /></IonButtons>
-          <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>ประวัติการจอง</div>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/home" color="light" />
+          </IonButtons>
+          <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 'bold' }}>
+            ประวัติการจอง
+          </div>
         </IonToolbar>
       </IonHeader>
 
       <IonContent fullscreen className="lux-page">
         <div className="lux-container" style={{ marginTop: '20px' }}>
-          
+
           {loading ? (
             <div style={{ textAlign: 'center', marginTop: '50px' }}>
               <IonSpinner name="crescent" color="warning" />
@@ -87,44 +154,104 @@ const BookingHistory: React.FC = () => {
             </div>
           ) : (
             history.map((item, index) => (
-              <IonCard key={item.id || index} className="lux-card" style={{ marginBottom: '20px', borderRadius: '15px' }}>
+              <IonCard
+                key={item.id || index}
+                className="lux-card"
+                style={{ marginBottom: '20px', borderRadius: '15px' }}
+              >
                 <IonCardContent>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #333', paddingBottom: '10px', marginBottom: '10px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      borderBottom: '1px solid #333',
+                      paddingBottom: '10px',
+                      marginBottom: '10px'
+                    }}
+                  >
                     <div>
-                      <h2 style={{ color: 'white', margin: 0, fontWeight: 'bold', fontSize: '1.2rem' }}>
+                      <h2
+                        style={{
+                          color: 'white',
+                          margin: 0,
+                          fontWeight: 'bold',
+                          fontSize: '1.2rem'
+                        }}
+                      >
                         {item.venueName || 'ไม่ระบุชื่อสนาม'}
                       </h2>
                       <p style={{ color: '#aaa', margin: '5px 0 0 0', fontSize: '0.8rem' }}>
                         รหัสการจอง: {item.id.slice(0, 8).toUpperCase()}
                       </p>
                     </div>
+
                     <IonBadge color="success">
-                      <IonIcon icon={checkmarkCircle} style={{ verticalAlign: 'middle', marginRight: '3px' }}/> 
+                      <IonIcon
+                        icon={checkmarkCircle}
+                        style={{ verticalAlign: 'middle', marginRight: '3px' }}
+                      />
                       เสร็จสิ้น
                     </IonBadge>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '15px' }}>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '10px',
+                      marginTop: '15px'
+                    }}
+                  >
                     <div style={{ color: '#ddd', fontSize: '0.9rem' }}>
-                      <IonIcon icon={calendarOutline} style={{ color: '#FFD700', marginRight: '5px' }} />
+                      <IonIcon
+                        icon={calendarOutline}
+                        style={{ color: '#FFD700', marginRight: '5px' }}
+                      />
                       <span style={{ fontWeight: 'bold' }}>{formatDate(item.date)}</span>
                     </div>
+
                     <div style={{ color: '#ddd', fontSize: '0.9rem' }}>
-                      <IonIcon icon={timeOutline} style={{ color: '#FFD700', marginRight: '5px' }} />
-                      <span style={{ fontWeight: 'bold' }}>{item.startTime} - {item.endTime}</span> น.
+                      <IonIcon
+                        icon={timeOutline}
+                        style={{ color: '#FFD700', marginRight: '5px' }}
+                      />
+                      <span style={{ fontWeight: 'bold' }}>
+                        {item.startTime} - {item.endTime}
+                      </span>{' '}
+                      น.
                     </div>
                   </div>
 
                   <div style={{ marginTop: '15px', color: '#aaa', fontSize: '0.9rem' }}>
-                    <IonIcon icon={locationOutline} style={{ color: '#FFD700', marginRight: '5px' }} />
-                    สนามที่เล่น: <span style={{ color: 'white' }}>
-                      {Array.isArray(item.courtIds) ? item.courtIds.join(', ') : 'ไม่ได้ระบุ'}
+                    <IonIcon
+                      icon={locationOutline}
+                      style={{ color: '#FFD700', marginRight: '5px' }}
+                    />
+                    สนามที่เล่น:{' '}
+                    <span style={{ color: 'white' }}>
+                      {formatCourtText(item.courtIds, item)}
                     </span>
                   </div>
 
-                  <div style={{ marginTop: '15px', paddingTop: '10px', borderTop: '1px dashed #444', textAlign: 'right' }}>
-                    <span style={{ color: '#aaa', fontSize: '0.9rem', marginRight: '10px' }}>ยอดสุทธิ:</span>
-                    <span style={{ color: '#FFD700', fontSize: '1.3rem', fontWeight: 'bold' }}>
+                  <div
+                    style={{
+                      marginTop: '15px',
+                      paddingTop: '10px',
+                      borderTop: '1px dashed #444',
+                      textAlign: 'right'
+                    }}
+                  >
+                    <span style={{ color: '#aaa', fontSize: '0.9rem', marginRight: '10px' }}>
+                      ยอดสุทธิ:
+                    </span>
+                    <span
+                      style={{
+                        color: '#FFD700',
+                        fontSize: '1.3rem',
+                        fontWeight: 'bold'
+                      }}
+                    >
                       ฿{item.totalPrice ? item.totalPrice.toLocaleString() : '0'}
                     </span>
                   </div>
