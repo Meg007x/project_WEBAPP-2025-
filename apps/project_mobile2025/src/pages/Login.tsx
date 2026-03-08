@@ -18,6 +18,7 @@ import {
 } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
 import "./Home.css";
+import myLogo from '../assets/icon/ionic_app__1_-removebg-preview.png';
 
 import { auth } from "../firebaseConfig";
 import {
@@ -166,9 +167,35 @@ const Login: React.FC = () => {
         <div className="lux-container" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
           {/* Logo / Title */}
           <div style={{ textAlign: "center", marginBottom: 18 }}>
-            <h1 style={{ color: "#FFD700", fontSize: "2.5rem", fontWeight: "bold", margin: 0 }}>LUX SPORT</h1>
+                          <h1 className="user-name" style={{ fontSize: "2.5rem", color: "#FFD700", fontWeight: "bold", margin: 0 }}>
+                SPORT HUB
+              </h1>
             <p style={{ color: "#888", marginTop: 6, marginBottom: 0 }}>เข้าสู่ระบบเพื่อจองสนาม</p>
           </div>
+          {/* ⭐️ หมัดสตาร์แพลตตินั่ม: ยัดโลโก้ของแกลงไปตรงนี้แหละ! */}
+           {/* ⭐️ หมัดสตาร์แพลตตินั่ม: ใช้ Flexbox บังคับเรียงบนลงล่าง จัดกลาง 100% */}
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              marginBottom: '30px', 
+              marginTop: '20px' 
+            }}>
+              <img 
+                src={myLogo}
+                alt="Sport Hub Logo" 
+                style={{ 
+                  width: '330px', 
+                  height: 'auto', 
+                  marginBottom: '15px', 
+                  filter: 'drop-shadow(0px 4px 8px rgba(255, 215, 0, 0.3))' // เงาสีทองสุดหรู
+                }} 
+              />
+
+              <IonText color="medium" style={{ textAlign: 'center' }}>
+                <small>แพลตฟอร์มจองสนาม ที่ดีที่สุด</small>
+              </IonText>
+            </div>
 
           {/* สำคัญ: div นี้ต้องมีอยู่จริง */}
           <div id="recaptcha-container" />

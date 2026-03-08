@@ -135,7 +135,7 @@ const BookingDetail: React.FC = () => {
     return `${venueId}_${dKey}_court${String(courtId)}_slot${slot}`;
   };
 
-  const handleConfirmBooking = async () => {
+const handleConfirmBooking = async () => {
     const user = auth.currentUser;
     if (!user) {
       history.replace('/login');
@@ -143,88 +143,37 @@ const BookingDetail: React.FC = () => {
     }
 
     const venueId: string = String(venue?.id ?? venue?.name ?? 'UNKNOWN_VENUE');
-    const dKey = dateKey(bookingData.date);
-    const startMin = toMinutes(bookingData.startTime);
+    const dKey = dateKey(bookingData.date); // ต้องแน่ใจนะว่าแกมีฟังก์ชัน dateKey()
+    const startMin = toMinutes(bookingData.startTime); // ต้องมีฟังก์ชัน toMinutes()
     const endMin = toMinutes(bookingData.endTime);
 
+    // ⭐️ เตรียมข้อมูลตั๋วแบบคลีนๆ ไร้ขยะเจือปน! โยนไปหน้าจ่ายเงิน
     const ticketPayload = {
       venue: venue,
-      venueId,
+      venueId: venueId,
       venueName: venue?.name || "Unknown Venue",
       partyName: partyName || "My Booking",
       date: bookingData.date,
       dateKey: dKey,
       startTime: bookingData.startTime,
       endTime: bookingData.endTime,
-      startMin,
-      endMin,
+      startMin: startMin,
+      endMin: endMin,
       duration: bookingData.duration || 1,
       courtIds: courtIds,
       totalPrice: grandTotal,
       membersCount: members.length,
-      status: 'PAID',
+      status: 'PAID', // ตั้งไว้ก่อน รอเซฟจริงหน้า Payment
       userId: user.uid,
       userEmail: user.email || null,
-      userPhone: user.phoneNumber || null,
+      userPhone: user.phoneNumber || null
     };
 
-    try {
-      const bookingsCol = collection(db, 'bookings');
-      const reservationsCol = collection(db, 'court_reservations');
-      const bookingRef = doc(bookingsCol);
-      const slots = buildSlotKeys(startMin, endMin);
-
-      const reservationIds: string[] = [];
-      for (const cId of courtIds) {
-        for (const s of slots) {
-          reservationIds.push(makeReservationDocId(venueId, dKey, cId, s));
-        }
-      }
-
-      await runTransaction(db, async (tx) => {
-        for (const rid of reservationIds) {
-          const rRef = doc(reservationsCol, rid);
-          const snap = await tx.get(rRef);
-          if (snap.exists()) {
-            const data = snap.data() as any;
-            throw new Error(`CONFLICT|จองซ้อนเวลาไม่ได้\n\nสนาม: ${data?.venueName}\nคอร์ด: ${data?.courtId}\nเวลา: ${data?.startTime}-${data?.endTime}`);
-          }
-        }
-        tx.set(bookingRef, {
-          ...ticketPayload,
-          id: bookingRef.id,
-          reservationIds,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-        for (const cId of courtIds) {
-          for (const s of slots) {
-            const rid = makeReservationDocId(venueId, dKey, cId, s);
-            tx.set(doc(reservationsCol, rid), {
-              bookingId: bookingRef.id,
-              userId: user.uid,
-              venueId,
-              venueName: venue?.name || "Unknown Venue",
-              dateKey: dKey,
-              courtId: cId,
-              slot: s,
-              startTime: bookingData.startTime,
-              endTime: bookingData.endTime,
-              createdAt: serverTimestamp(),
-            });
-          }
-        }
-      });
-
-      history.push({
-        pathname: '/booking-ticket',
-        state: { ...ticketPayload, id: bookingRef.id, isJustBooked: true }
-      });
-    } catch (e: any) {
-      const msg = String(e?.message || '');
-      setConflictMessage(msg.startsWith('CONFLICT|') ? msg.replace('CONFLICT|', '') : 'บันทึกไม่สำเร็จ: ' + msg);
-      setShowConflictAlert(true);
-    }
+    // ⭐️ โยนข้อมูลทั้งหมดไปที่หน้า /payment
+    history.push({
+      pathname: '/payment',
+      state: { ticketPayload, courtIds }
+    });
   };
 
   const addMember = () => {

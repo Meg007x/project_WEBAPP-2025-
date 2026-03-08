@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import BookingHistory from './pages/BookingHistory';
+import Payment from './pages/Payment';
 
 import BadmintonCourts from './pages/BadmintonCourts';
 import BadmintonVenue from './pages/BadmintonVenue';
@@ -94,7 +95,7 @@ const App: React.FC = () => (
         {/* ✅ ปรับเป็น PrivateRoute เพื่อให้เข้าถึงข้อมูล User ได้ในการออกตั๋ว */}
         <PrivateRoute exact path="/booking-ticket" component={BookingTicket} /> 
         <PrivateRoute exact path="/ticket-list" component={TicketList} />
-
+        <PrivateRoute exact path="/payment" component={Payment} />
         {/* ✅ ปรับเป็น PrivateRoute ทั้งหมดเพื่อป้องกัน User หลุดจากระบบขณะเลือกสนาม */}
         <PrivateRoute exact path="/venue-pcr" component={BadmintonVenuePCR} />
         {/* หน้าเลือกว่าจะเอาคอร์ทไหน (แยก PS และ PCR) */}
